@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ thống Đấu giá Trực tuyến</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; }
+        .hero-section { background: url('https://via.placeholder.com/1920x600/4facfe/00f2fe?text=Đấu+giá+Trực+tuyến') no-repeat center center; background-size: cover; color: white; padding: 100px 0; text-align: center; }
+        .hero-section h1 { font-size: 3rem; font-weight: bold; animation: fadeInUp 1s ease-out; }
+        .hero-section p { font-size: 1.5rem; animation: fadeInUp 1.2s ease-out; }
+        .card { border: none; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); transition: transform 0.3s ease, box-shadow 0.3s ease; }
+        .card:hover { transform: translateY(-10px); box-shadow: 0 20px 40px rgba(0,0,0,0.2); }
+        .btn-primary { background: linear-gradient(45deg, #667eea, #764ba2); border: none; border-radius: 25px; padding: 10px 30px; transition: all 0.3s ease; }
+        .btn-primary:hover { transform: scale(1.05); box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+        .auction-item { background: white; border-radius: 15px; overflow: hidden; margin-bottom: 20px; }
+        .auction-item img { width: 100%; height: 200px; object-fit: cover; }
+        .bid-button { background: #28a745; color: white; border: none; border-radius: 20px; padding: 5px 15px; transition: background 0.3s ease; }
+        .bid-button:hover { background: #218838; }
+        .navbar { background: rgba(255,255,255,0.9); backdrop-filter: blur(10px); }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+        .fade-in { animation: fadeInUp 0.8s ease-out; }
+        .modal-content { border-radius: 15px; border: none; }
+        .form-control { border-radius: 10px; border: 1px solid #ddd; }
+        .form-control:focus { border-color: #667eea; box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25); }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light fixed-top">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="#"><i class="fas fa-gavel"></i> AuctionPro</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto align-items-center">
+                    <li class="nav-item"><a class="nav-link" href="#home">Trang chủ</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#auctions">Đấu giá</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#about">Giới thiệu</a></li>
+                    <li class="nav-item" id="authButtonArea">
+                        <button class="btn btn-primary ms-3" data-bs-toggle="modal" data-bs-target="#loginModal">Đăng nhập</button>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <section class="hero-section" id="home">
+        <div class="container">
+            <h1>Chào mừng đến với AuctionPro</h1>
+            <p>Nơi đấu giá trực tuyến hàng đầu Việt Nam</p>
+            <button class="btn btn-light btn-lg mt-3" onclick="checkStartAction()">Bắt đầu đấu giá</button>
+        </div>
+    </section>
+
+    <section id="auctions" class="py-5 bg-light">
+        <div class="container">
+            <h2 class="text-center mb-5 fade-in">Phiên đấu giá nổi bật</h2>
+            
+            <!-- BỔ SUNG: Thanh tìm kiếm và bộ lọc -->
+            <div class="row mb-4 fade-in g-2 justify-content-center">
+                <div class="col-md-4">
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-search"></i></span>
+                        <input type="text" id="searchInput" class="form-control" placeholder="Tìm tên sản phẩm...">
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <input type="number" id="minPrice" class="form-control" placeholder="Giá thấp nhất">
+                </div>
+                <div class="col-md-2">
+                    <input type="number" id="maxPrice" class="form-control" placeholder="Giá cao nhất">
+                </div>
+                <div class="col-md-2">
+                    <button class="btn btn-primary w-100" onclick="loadAuctions()">Lọc</button>
+                </div>
+            </div>
+
+            <div class="row" id="auctionList">
+                </div>
+        </div>
+    </section>
+
+    <section id="about" class="py-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6 fade-in">
+                    <h3>Về chúng tôi</h3>
+                    <p>AuctionPro là nền tảng đấu giá trực tuyến uy tín, mang đến trải nghiệm đấu giá công bằng và minh bạch cho mọi người.</p>
+                    <ul class="list-unstyled">
+                        <li><i class="fas fa-check text-success me-2"></i>Đấu giá real-time</li>
+                        <li><i class="fas fa-check text-success me-2"></i>Bảo mật cao</li>
+                        <li><i class="fas fa-check text-success me-2"></i>Hỗ trợ 24/7</li>
+                    </ul>
+                </div>
+                <div class="col-md-6 fade-in">
+                    <img src="https://via.placeholder.com/500x300/667eea/ffffff?text=Đấu+giá+Trực+tuyến" class="img-fluid rounded" alt="Auction">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="modal fade" id="loginModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Đăng nhập</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="loginForm">
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="email" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Mật khẩu</label>
+                            <input type="password" class="form-control" id="password" required minlength="6">
+                        </div>
+                        <div class="mb-3 text-end">
+                            <a href="#" class="text-decoration-none small" data-bs-toggle="modal" data-bs-target="#forgotPasswordModal" data-bs-dismiss="modal">Quên mật khẩu?</a>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Đăng nhập</button>
+                    </form>
+                    <hr>
+                    <p class="text-center">Chưa có tài khoản? <a href="#" data-bs-toggle="modal" data-bs-target="#registerModal" data-bs-dismiss="modal">Đăng ký ngay</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Register Modal -->
+    <div class="modal fade" id="registerModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Đăng ký tài khoản</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="registerForm">
+                        <div class="mb-3">
+                            <label for="regName" class="form-label">Họ và tên</label>
+                            <input type="text" class="form-control" id="regName" required placeholder="Ví dụ: Nguyễn Văn A">
+                        </div>
+                        <div class="mb-3">
+                            <label for="regEmail" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="regEmail" required placeholder="email@example.com">
+                        </div>
+                        <div class="mb-3">
+                            <label for="regPassword" class="form-label">Mật khẩu</label>
+                            <input type="password" class="form-control" id="regPassword" required minlength="6">
+                        </div>
+                        <div class="mb-3">
+                            <label for="regRole" class="form-label">Bạn muốn đăng ký làm?</label>
+                            <select class="form-select" id="regRole">
+                                <option value="User">Người mua (User)</option>
+                                <option value="Seller">Người bán (Seller)</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="regAvatar" class="form-label">Ảnh đại diện (Tùy chọn)</label>
+                            <input type="file" class="form-control" id="regAvatar" accept="image/*">
+                        </div>
+                        <button type="submit" class="btn btn-success w-100">Đăng ký</button>
+                    </form>
+                    <hr>
+                    <p class="text-center">Đã có tài khoản? <a href="#" data-bs-toggle="modal" data-bs-target="#loginModal" data-bs-dismiss="modal">Đăng nhập</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Forgot Password Modal -->
+    <div class="modal fade" id="forgotPasswordModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Quên mật khẩu</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Nhập email của bạn để nhận hướng dẫn đặt lại mật khẩu.</p>
+                    <form id="forgotPasswordForm">
+                        <div class="mb-3">
+                            <input type="email" class="form-control" id="forgotEmail" placeholder="Nhập email của bạn" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Gửi yêu cầu</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reset Password Modal -->
+    <div class="modal fade" id="resetPasswordModal" tabindex="-1" data-bs-backdrop="static">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Đặt lại mật khẩu</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="resetPasswordForm">
+                        <div class="mb-3">
+                            <label class="form-label">Mật khẩu mới</label>
+                            <input type="password" class="form-control" id="newResetPassword" required minlength="6">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Xác nhận mật khẩu</label>
+                            <input type="password" class="form-control" id="confirmResetPassword" required minlength="6">
+                        </div>
+                        <button type="submit" class="btn btn-success w-100">Đổi mật khẩu</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="bg-dark text-white py-4">
+        <div class="container text-center">
+            <p>&copy; 2024 AuctionPro. Tất cả quyền được bảo lưu.</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+    
+    <script>
+        const socket = io();
+        let token = localStorage.getItem('token');
+        
+        // --- CÁC HÀM TIỆN ÍCH ---
+        const formatVND = (num) => {
+            try { return Number(num).toLocaleString('vi-VN', { style: 'currency', currency: 'VND' }); }
+            catch (e) { return num + ' VND'; }
+        };
+
+        const showNotification = (msg, isError = false) => {
+            Toastify({
+                text: msg,
+                duration: 3000,
+                gravity: "top",
+                position: "right",
+                backgroundColor: isError ? "#dc3545" : "#28a745",
+            }).showToast();
+        };
+
+        // Hàm cập nhật giao diện Login/Logout
+        function updateAuthUI() {
+            const authArea = document.getElementById('authButtonArea');
+            const userStr = localStorage.getItem('user');
+            token = localStorage.getItem('token');
+            
+            if (token && userStr) {
+                const user = JSON.parse(userStr);
+                const roles = user.roles || [];
+                
+                // Tạo menu dropdown cho người dùng
+                let menuItems = '';
+                if (roles.includes('User')) {
+                    menuItems += `<li><a class="dropdown-item" href="/user.html">Hồ sơ & Đấu giá</a></li>`;
+                }
+                
+                if (roles.includes('Seller')) {
+                    menuItems += `<li><a class="dropdown-item fw-bold text-primary" href="/seller.html">Kênh người bán</a></li>`;
+                }
+                if (roles.includes('Admin')) {
+                    menuItems += `<li><a class="dropdown-item fw-bold text-danger" href="/admin.html">Trang quản trị</a></li>`;
+                }
+
+                authArea.innerHTML = `
+                    <div class="dropdown ms-3">
+                        <button class="btn btn-outline-light dropdown-toggle text-dark border-0" type="button" data-bs-toggle="dropdown">
+                            <img src="${user.avatar || 'https://via.placeholder.com/30'}" class="rounded-circle me-1" style="width: 30px; height: 30px; object-fit: cover;">
+                            ${user.name}
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            ${menuItems}
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item text-danger" href="#" onclick="logout()">Đăng xuất</a></li>
+                        </ul>
+                    </div>`;
+            } else {
+                // Nếu chưa: Hiện nút Đăng nhập
+                authArea.innerHTML = `<button class="btn btn-primary ms-3" data-bs-toggle="modal" data-bs-target="#loginModal">Đăng nhập</button>`;
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            token = null;
+            updateAuthUI();
+            showNotification('Đã đăng xuất thành công');
+        }
+
+        function checkStartAction() {
+            if (token) {
+                document.getElementById('auctions').scrollIntoView({behavior: 'smooth'});
+            } else {
+                // Mở modal login bằng Bootstrap 5 JS thuần
+                new bootstrap.Modal(document.getElementById('loginModal')).show();
+            }
+        }
+
+        // --- LOAD DỮ LIỆU ĐẤU GIÁ ---
+        async function loadAuctions() {
+            console.log('Loading auctions...');
+            try {
+                // Lấy giá trị từ bộ lọc
+                const q = document.getElementById('searchInput')?.value || '';
+                const min = document.getElementById('minPrice')?.value || '';
+                const max = document.getElementById('maxPrice')?.value || '';
+                
+                // Tạo query string
+                const params = new URLSearchParams();
+                if (q) params.append('q', q);
+                if (min) params.append('min', min);
+                if (max) params.append('max', max);
+
+                const response = await fetch(`/api/auction?${params.toString()}`);
+                const auctions = await response.json();
+                const container = document.getElementById('auctionList');
+                container.innerHTML = '';
+                
+                auctions.forEach(auction => {
+                    const col = document.createElement('div');
+                    col.className = 'col-md-4 mb-4 fade-in';
+                    col.innerHTML = `
+                        <div class="card auction-item">
+                            <img src="${auction.image || `https://via.placeholder.com/300x200/eee/aaa?text=No+Image`}" 
+                                 alt="${auction.productName}" 
+                                 onerror="this.src='https://via.placeholder.com/300x200/eee/aaa?text=Error'">
+                            <div class="card-body">
+                                <h5 class="card-title">${auction.productName || 'Sản phẩm'}</h5>
+                                <p class="card-text">Giá hiện tại: <strong>${formatVND(auction.currentBid)}</strong></p>
+                                <p class="card-text small text-muted">Người dẫn đầu: ${auction.topBidder || 'Chưa có'}</p>
+                                ${auction.status === 'active' 
+                                    ? `<button class="btn bid-button w-100" onclick="openBidModal(${auction.id})">Đặt giá ngay</button>`
+                                    : `<button class="btn btn-secondary w-100" disabled>Đã kết thúc</button>`
+                                }
+                            </div>
+                        </div>
+                    `;
+                    container.appendChild(col);
+                });
+            } catch (e) {
+                console.error('Load auctions error', e);
+            }
+        }
+
+        function openBidModal(id) {
+            if (!token) {
+                showNotification('Vui lòng đăng nhập để đặt giá', true);
+                new bootstrap.Modal(document.getElementById('loginModal')).show();
+                return;
+            }
+            const bidAmount = prompt('Nhập giá đặt:');
+            if (bidAmount) placeBid(id, bidAmount);
+        }
+
+        async function placeBid(auctionId, bidAmount) {
+            try {
+                const response = await fetch(`/api/auction/${auctionId}/bid`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ bidAmount: Number(bidAmount) })
+                });
+                const data = await response.json();
+                if (response.ok) {
+                    showNotification(data.message);
+                    loadAuctions();
+                } else {
+                    showNotification(data.message || 'Đặt giá thất bại', true);
+                }
+            } catch (e) {
+                showNotification('Lỗi khi đặt giá', true);
+            }
+        }
+
+        // --- XỬ LÝ ĐĂNG NHẬP (QUAN TRỌNG) ---
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.token) {
+                    // 1. Ghi đè token mới (Xóa sạch nghi ngờ về dữ liệu cũ)
+                    localStorage.setItem('token', data.token);
+                    if(data.user) localStorage.setItem('user', JSON.stringify(data.user));
+                    
+                    showNotification('Đăng nhập thành công');
+                    
+                    // 2. Đóng Modal (Dùng Bootstrap 5 Standard - FIX LỖI)
+                    const modalElement = document.getElementById('loginModal');
+                    const modalInstance = bootstrap.Modal.getInstance(modalElement);
+                    if (modalInstance) modalInstance.hide();
+
+                    // 3. Cập nhật giao diện
+                    updateAuthUI();
+
+                    // 4. Kiểm tra quyền và Chuyển hướng
+                    const roles = data.user?.roles || [];
+                    console.log('User Roles:', roles);
+
+                    setTimeout(() => {
+                        if (roles.includes('Admin')) {
+                            window.location.href = '/admin.html';
+                        } else if (roles.includes('Seller')) {
+                            window.location.href = '/seller.html';
+                        } else {
+                            window.location.href = '/user.html';
+                        }
+                    }, 1000); // Delay 1s để user thấy thông báo
+                } else {
+                    showNotification(data.message || 'Đăng nhập thất bại', true);
+                }
+            } catch (e) {
+                console.error(e);
+                showNotification('Lỗi kết nối server', true);
+            }
+        });
+
+        // --- XỬ LÝ ĐĂNG KÝ ---
+        document.getElementById('registerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData();
+            formData.append('name', document.getElementById('regName').value);
+            formData.append('email', document.getElementById('regEmail').value);
+            formData.append('password', document.getElementById('regPassword').value);
+            formData.append('role', document.getElementById('regRole').value);
+
+            const avatarFile = document.getElementById('regAvatar').files[0];
+            if (avatarFile) {
+                formData.append('avatar', avatarFile);
+            }
+
+            try {
+                const response = await fetch('/api/auth/register', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showNotification('Đăng ký thành công! Vui lòng đăng nhập.');
+                    // Chuyển sang modal đăng nhập
+                    const regModal = bootstrap.Modal.getInstance(document.getElementById('registerModal'));
+                    regModal.hide();
+                    new bootstrap.Modal(document.getElementById('loginModal')).show();
+                } else {
+                    showNotification(data.message || data.error || 'Đăng ký thất bại', true);
+                }
+            } catch (e) {
+                console.error(e);
+                showNotification('Lỗi kết nối server', true);
+            }
+        });
+
+        // --- XỬ LÝ QUÊN MẬT KHẨU ---
+        document.getElementById('forgotPasswordForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('forgotEmail').value;
+            const btn = e.target.querySelector('button');
+            
+            btn.disabled = true;
+            btn.textContent = 'Đang gửi...';
+
+            try {
+                const response = await fetch('/api/auth/forgot-password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email })
+                });
+                const data = await response.json();
+                showNotification(data.message, !response.ok);
+                if (response.ok) {
+                    bootstrap.Modal.getInstance(document.getElementById('forgotPasswordModal')).hide();
+                }
+            } catch (e) {
+                showNotification('Lỗi kết nối server', true);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Gửi yêu cầu';
+            }
+        });
+
+        // --- XỬ LÝ ĐẶT LẠI MẬT KHẨU (Khi có token trên URL) ---
+        document.getElementById('resetPasswordForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const urlParams = new URLSearchParams(window.location.search);
+            const token = urlParams.get('resetToken');
+            const newPassword = document.getElementById('newResetPassword').value;
+            const confirmPassword = document.getElementById('confirmResetPassword').value;
+
+            if (newPassword !== confirmPassword) {
+                showNotification('Mật khẩu xác nhận không khớp', true);
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/auth/reset-password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token, newPassword })
+                });
+                const data = await response.json();
+                showNotification(data.message, !response.ok);
+                if (response.ok) {
+                    bootstrap.Modal.getInstance(document.getElementById('resetPasswordModal')).hide();
+                    // Xóa token khỏi URL để sạch đẹp
+                    window.history.replaceState({}, document.title, "/");
+                    // Mở modal đăng nhập
+                    new bootstrap.Modal(document.getElementById('loginModal')).show();
+                }
+            } catch (e) {
+                showNotification('Lỗi kết nối server', true);
+            }
+        });
+
+        // Socket events
+        socket.on('bidUpdate', (data) => {
+            showNotification(`Có người vừa đặt giá: ${formatVND(data.bidAmount)}`);
+            loadAuctions();
+        });
+
+        // Init page
+        document.addEventListener('DOMContentLoaded', () => {
+            loadAuctions();
+            updateAuthUI(); // Kiểm tra xem có token cũ không để hiển thị đúng nút
+
+            // Kiểm tra nếu đang ở link reset password
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.has('resetToken')) {
+                const resetModal = new bootstrap.Modal(document.getElementById('resetPasswordModal'));
+                resetModal.show();
+            }
+        });
+    </script>
+</body>
+</html>

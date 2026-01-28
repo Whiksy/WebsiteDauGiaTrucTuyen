@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Người dùng - Hệ thống Đấu giá</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Toastify CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+    <!-- Custom CSS -->
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            min-height: 100vh;
+        }
+        .navbar {
+            background: rgba(255,255,255,0.9);
+            backdrop-filter: blur(10px);
+        }
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+        }
+        .btn-primary {
+            background: linear-gradient(45deg, #f093fb, #f5576c);
+            border: none;
+            border-radius: 25px;
+            padding: 10px 30px;
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        .auction-card {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+        .auction-card img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+        .bid-input {
+            border-radius: 20px;
+            border: 1px solid #ddd;
+            padding: 5px 15px;
+        }
+        .bid-button {
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            padding: 5px 15px;
+            transition: background 0.3s ease;
+        }
+        .bid-button:hover {
+            background: #218838;
+        }
+        .countdown {
+            font-weight: bold;
+            color: #dc3545;
+        }
+        .fade-in {
+            animation: fadeInUp 0.8s ease-out;
+        }
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .modal-content {
+            border-radius: 15px;
+            border: none;
+        }
+        .form-control {
+            border-radius: 10px;
+            border: 1px solid #ddd;
+        }
+        .form-control:focus {
+            border-color: #f093fb;
+            box-shadow: 0 0 0 0.2rem rgba(240, 147, 251, 0.25);
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-light fixed-top">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="/"><i class="fas fa-gavel"></i> AuctionPro</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link" href="#auctions">Đấu giá</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#won-items">Đã thắng</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#history">Lịch sử</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#profile">Hồ sơ</a></li>
+                    <!-- Dropdown User -->
+                    <li class="nav-item dropdown ms-3">
+                        <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <img id="navAvatar" src="https://via.placeholder.com/30" class="rounded-circle me-2" width="30" height="30" style="object-fit: cover;">
+                            <span id="navName">User</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                            <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#editProfileModal"><i class="fas fa-user-circle me-2"></i>Hồ sơ cá nhân</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item text-danger" href="#" onclick="logout()"><i class="fas fa-sign-out-alt me-2"></i>Đăng xuất</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-5 pt-5">
+        <!-- Welcome Section -->
+        <div class="row mb-5">
+            <div class="col-12 text-center fade-in">
+                <h1 class="display-4">Chào mừng, <span id="userName">Người dùng</span>!</h1>
+                <p class="lead">Tham gia đấu giá và giành chiến thắng với giá tốt nhất.</p>
+            </div>
+        </div>
+
+        <!-- Auctions Section -->
+        <section id="auctions" class="mb-5">
+            <h2 class="mb-4 fade-in">Phiên đấu giá đang diễn ra</h2>
+            <div class="row" id="auctionList">
+                <!-- Auction cards will be loaded here -->
+            </div>
+        </section>
+
+        <!-- BỔ SUNG: Won Auctions Section -->
+        <section id="won-items" class="mb-5">
+            <h2 class="mb-4 fade-in text-success"><i class="fas fa-trophy"></i> Đấu giá đã thắng</h2>
+            <div class="row" id="wonList"></div>
+        </section>
+
+        <!-- Bid History Section -->
+        <section id="history" class="mb-5">
+            <h2 class="mb-4 fade-in">Lịch sử đặt giá</h2>
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="bidHistoryTable">
+                            <thead>
+                                <tr>
+                                    <th>Sản phẩm</th>
+                                    <th>Giá đặt</th>
+                                    <th>Thời gian</th>
+                                    <th>Trạng thái</th>
+                                </tr>
+                            </thead>
+                            <tbody id="bidHistoryBody">
+                                <!-- Bid history will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Profile Section -->
+        <section id="profile" class="mb-5">
+            <h2 class="mb-4 fade-in">Hồ sơ cá nhân</h2>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="text-center mb-3">
+                                <img id="profileAvatar" src="https://via.placeholder.com/150" class="rounded-circle shadow-sm" style="width: 120px; height: 120px; object-fit: cover;">
+                            </div>
+                            <h5 class="card-title">Thông tin tài khoản</h5>
+                            <p><strong>Email:</strong> <span id="userEmail"></span></p>
+                            <p><strong>Họ tên:</strong> <span id="userFullName"></span></p>
+                            <p><strong>Vai trò:</strong> Người dùng</p>
+                            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#editProfileModal">Chỉnh sửa hồ sơ</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Thống kê</h5>
+                            <p><strong>Tổng phiên đấu giá tham gia:</strong> <span id="totalAuctions">0</span></p>
+                            <p><strong>Tổng giá đặt:</strong> <span id="totalBids">0</span></p>
+                            <p><strong>Chiến thắng:</strong> <span id="wins">0</span></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Edit Profile Modal -->
+    <div class="modal fade" id="editProfileModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Cập nhật hồ sơ</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editProfileForm">
+                        <div class="text-center mb-3">
+                            <img id="editProfilePreview" src="https://via.placeholder.com/100" class="rounded-circle border" width="100" height="100" style="object-fit: cover;">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Họ tên</label>
+                            <input type="text" class="form-control" id="editProfileName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Email</label>
+                            <input type="email" class="form-control" id="editProfileEmail" readonly disabled style="background-color: #e9ecef;">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Mật khẩu mới</label>
+                            <input type="password" class="form-control" id="editProfilePassword" placeholder="Để trống nếu không đổi">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Xác nhận mật khẩu</label>
+                            <input type="password" class="form-control" id="editProfileConfirmPassword" placeholder="Nhập lại mật khẩu mới">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Ảnh đại diện</label>
+                            <input type="file" class="form-control" id="editProfileAvatar" accept="image/*">
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Lưu thay đổi</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bid Modal -->
+    <div class="modal fade" id="bidModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Đặt giá</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="bidModalContent">
+                        <!-- Content will be loaded here -->
+                    </div>
+                    <form id="bidForm">
+                        <div class="mb-3">
+                            <label for="bidAmount" class="form-label">Giá đặt (VND)</label>
+                            <input type="number" class="form-control" id="bidAmount" min="0" step="1000" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Đặt giá</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white py-4 mt-5">
+        <div class="container text-center">
+            <p>&copy; 2024 AuctionPro. Tất cả quyền được bảo lưu.</p>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+    <script>
+        const socket = io();
+        let token = localStorage.getItem('token');
+        let currentUser = null;
+
+        const formatVND = (num) => {
+            try { return Number(num).toLocaleString('vi-VN', { style: 'currency', currency: 'VND' }); }
+            catch (e) { return num + ' VND'; }
+        };
+
+        const showNotification = (msg, isError = false) => {
+            Toastify({
+                text: msg,
+                duration: 3000,
+                gravity: "top",
+                position: "right",
+                backgroundColor: isError ? "#dc3545" : "#28a745",
+            }).showToast();
+        };
+
+        // Check authentication and role
+        if (!token) {
+            window.location.href = '/';
+        }
+
+        // Check if user has User role
+        async function checkUserRole() {
+            try {
+                const response = await fetch('/api/auth/me', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (response.ok) {
+                    const userData = await response.json();
+                    const roles = userData.roles || [];
+                    if (!roles.includes('User')) {
+                        showNotification('Bạn không có quyền truy cập trang này', true);
+                        setTimeout(() => window.location.href = '/', 2000);
+                        return false;
+                    }
+                    return true;
+                } else {
+                    logout();
+                    return false;
+                }
+            } catch (e) {
+                console.error('Role check error:', e);
+                logout();
+                return false;
+            }
+        }
+
+        // Load user data
+        async function loadUserData() {
+            try {
+                const response = await fetch('/api/auth/me', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (response.ok) {
+                    currentUser = await response.json();
+                    
+                    const userNameEl = document.getElementById('userName');
+                    if (userNameEl) userNameEl.textContent = currentUser.name || 'Người dùng';
+                    
+                    const userEmailEl = document.getElementById('userEmail');
+                    if (userEmailEl) userEmailEl.textContent = currentUser.email || '';
+                    
+                    const userFullNameEl = document.getElementById('userFullName');
+                    if (userFullNameEl) userFullNameEl.textContent = currentUser.name || '';
+                    
+                    // Update Profile Avatar
+                    const profileAvatar = document.getElementById('profileAvatar');
+                    if (profileAvatar) {
+                        profileAvatar.src = currentUser.avatar || 'https://via.placeholder.com/150';
+                    }
+
+                    // Update Navbar Info
+                    document.getElementById('navName').textContent = currentUser.name || 'User';
+                    if (currentUser.avatar) {
+                        document.getElementById('navAvatar').src = currentUser.avatar;
+                    }
+                } else {
+                    console.error('Failed to load user data:', response.status);
+                    showNotification('Không thể tải thông tin người dùng', true);
+                    // Don't logout, just show error
+                }
+            } catch (e) {
+                console.error('Load user data error:', e);
+                showNotification('Lỗi tải thông tin người dùng', true);
+            }
+        }
+
+        // Event listener to populate modal when opened (Like Facebook)
+        const editProfileModal = document.getElementById('editProfileModal');
+        if (editProfileModal) {
+            editProfileModal.addEventListener('show.bs.modal', () => {
+                // FIX: Không gọi API loadUserData() ở đây để tránh ghi đè dữ liệu khi người dùng đang nhập
+                // Sử dụng dữ liệu currentUser đã được tải từ trước (Instant load)
+                if (currentUser) {
+                    document.getElementById('editProfileName').value = currentUser.name || '';
+                    document.getElementById('editProfileEmail').value = currentUser.email || '';
+                    document.getElementById('editProfilePassword').value = '';
+                    document.getElementById('editProfileConfirmPassword').value = '';
+                    document.getElementById('editProfileAvatar').value = '';
+                    
+                    if (currentUser.avatar) {
+                        document.getElementById('editProfilePreview').src = currentUser.avatar;
+                    }
+                }
+            });
+        }
+
+        // Load auctions
+        async function loadAuctions() {
+            try {
+                const response = await fetch('/api/auction');
+                const auctions = await response.json();
+                const container = document.getElementById('auctionList');
+                container.innerHTML = '';
+                auctions.forEach(auction => {
+                    const col = document.createElement('div');
+                    col.className = 'col-md-4 mb-4 fade-in';
+
+                    col.innerHTML = `
+                        <div class="card auction-card">
+                            <img src="${auction.image || 'https://via.placeholder.com/300x200?text=No+Image'}" 
+                                alt="${auction.productName}"
+                                onerror="this.src='https://via.placeholder.com/300x200?text=Error'">
+                            <div class="card-body">
+                                <h5 class="card-title text-truncate">${auction.productName}</h5>
+                                <p class="card-text">Giá hiện tại: <strong class="text-danger">${formatVND(auction.currentBid)}</strong></p>
+                                <p class="card-text small">Người dẫn đầu: ${auction.topBidder || 'Chưa có'}</p>
+                                <p class="card-text">Thời gian còn lại: <span class="countdown" id="time-${auction.id}">...</span></p>
+                                <div class="input-group mb-2">
+                                    <input type="number" class="form-control bid-input" placeholder="Giá..." id="input-${auction.id}">
+                                    <button class="btn bid-button" onclick="handleBidClick(${auction.id})">Đặt giá</button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    container.appendChild(col);
+                    // Start countdown
+                    startCountdown(auction.id, auction.endTime);
+                });
+            } catch (e) {
+                console.error('Load auctions error', e);
+            }
+        }
+
+        function startCountdown(auctionId, endTime) {
+            const timer = setInterval(() => {
+                const now = new Date().getTime();
+                const end = new Date(endTime).getTime();
+                const distance = end - now;
+
+                if (distance < 0) {
+                    document.getElementById(`time-${auctionId}`).textContent = 'Đã kết thúc';
+                    clearInterval(timer);
+                } else {
+                    const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+                    const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                    const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                    const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+                    document.getElementById(`time-${auctionId}`).textContent = `${days}d ${hours}h ${minutes}m ${seconds}s`;
+                }
+            }, 1000);
+        }
+
+        function handleBidClick(auctionId) {
+            const input = document.getElementById(`input-${auctionId}`);
+            const bidAmount = input.value;
+            if (bidAmount) {
+                placeBid(auctionId, bidAmount);
+            } else {
+                showNotification('Vui lòng nhập giá đặt', true);
+            }
+        }
+
+        async function placeBid(auctionId, bidAmount) {
+            if (!bidAmount || bidAmount <= 0) {
+                showNotification('Vui lòng nhập giá đặt hợp lệ', true);
+                return;
+            }
+            try {
+                const response = await fetch(`/api/auction/${auctionId}/bid`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ bidAmount: Number(bidAmount) })
+                });
+                const data = await response.json();
+                if (response.ok) {
+                    showNotification(data.message);
+                    loadAuctions();
+                    loadBidHistory();
+                } else {
+                    showNotification(data.message || 'Đặt giá thất bại', true);
+                }
+            } catch (e) {
+                showNotification('Lỗi khi đặt giá', true);
+            }
+        }
+
+        // BỔ SUNG: Load Won Auctions
+        async function loadWonAuctions() {
+            try {
+                const response = await fetch('/api/user/won-auctions', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const auctions = await response.json();
+                const container = document.getElementById('wonList');
+                container.innerHTML = '';
+                
+                if (auctions.length === 0) {
+                    container.innerHTML = '<div class="col-12"><p class="text-muted">Bạn chưa thắng phiên đấu giá nào.</p></div>';
+                    return;
+                }
+
+                auctions.forEach(a => {
+                    const col = document.createElement('div');
+                    col.className = 'col-md-4 mb-4 fade-in';
+                    const isPaid = a.paymentStatus === 'Paid';
+                    
+                    col.innerHTML = `
+                        <div class="card border-${isPaid ? 'success' : 'warning'} h-100">
+                            <div class="card-header bg-${isPaid ? 'success' : 'warning'} text-white">
+                                ${isPaid ? 'Đã thanh toán' : 'Chờ thanh toán'}
+                            </div>
+                            <img src="${a.image || 'https://via.placeholder.com/300'}" class="card-img-top" style="height: 200px; object-fit: cover;">
+                            <div class="card-body">
+                                <h5 class="card-title">${a.productName}</h5>
+                                <p>Giá thắng: <strong>${formatVND(a.winningPrice)}</strong></p>
+                                <p class="small text-muted">Người bán: ${a.sellerName}</p>
+                                ${!isPaid ? `<button class="btn btn-primary w-100" onclick="payForAuction(${a.winningPrice}, '${a.auctionId}')">Thanh toán Momo</button>` : '<button class="btn btn-success w-100" disabled>Hoàn tất</button>'}
+                            </div>
+                        </div>
+                    `;
+                    container.appendChild(col);
+                });
+                
+                // Cập nhật thống kê
+                document.getElementById('wins').textContent = auctions.length;
+            } catch (e) {
+                console.error('Load won auctions error', e);
+            }
+        }
+
+        // BỔ SUNG: Hàm thanh toán
+        async function payForAuction(amount, orderIdPrefix) {
+            try {
+                const orderId = `ORDER_${orderIdPrefix}_${Date.now()}`;
+                const response = await fetch('/api/payment/create', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ amount: amount, orderId: orderId })
+                });
+                const data = await response.json();
+                if (data.payUrl) {
+                    window.location.href = data.payUrl; // Chuyển hướng sang Momo
+                } else {
+                    showNotification('Lỗi tạo thanh toán', true);
+                }
+            } catch (e) {
+                showNotification('Lỗi kết nối thanh toán', true);
+            }
+        }
+
+        // Load bid history
+        async function loadBidHistory() {
+            try {
+                const response = await fetch('/api/user/bids', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const bids = await response.json();
+                const tbody = document.getElementById('bidHistoryBody');
+                tbody.innerHTML = '';
+                bids.forEach(bid => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${bid.productName}</td>
+                        <td>${formatVND(bid.amount)}</td>
+                        <td>${new Date(bid.timestamp).toLocaleString('vi-VN')}</td>
+                        <td><span class="badge bg-${bid.status === 'won' ? 'success' : bid.status === 'lost' ? 'danger' : 'warning'}">${bid.status}</span></td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            } catch (e) {
+                console.error('Load bid history error', e);
+            }
+        }
+
+        // Edit profile
+        document.getElementById('editProfileForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            // Hiệu ứng loading cho nút Lưu
+            const btnSubmit = e.target.querySelector('button[type="submit"]');
+            const originalBtnText = btnSubmit.innerHTML;
+            btnSubmit.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Đang lưu...';
+            btnSubmit.disabled = true;
+            
+            const formData = new FormData();
+            formData.append('name', document.getElementById('editProfileName').value);
+            
+            const password = document.getElementById('editProfilePassword').value;
+            const confirmPassword = document.getElementById('editProfileConfirmPassword').value;
+
+            if (password) {
+                if (password !== confirmPassword) {
+                    showNotification('Mật khẩu xác nhận không khớp', true);
+                    btnSubmit.innerHTML = originalBtnText;
+                    btnSubmit.disabled = false;
+                    return;
+                }
+                formData.append('password', password);
+            }
+            
+            const fileInput = document.getElementById('editProfileAvatar');
+            if (fileInput.files && fileInput.files[0]) {
+                formData.append('avatar', fileInput.files[0]);
+            }
+
+            try {
+                const response = await fetch('/api/user/profile', {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: formData
+                });
+                const data = await response.json();
+                if (response.ok) {
+                    showNotification('Cập nhật hồ sơ thành công');
+                    // Sử dụng Bootstrap 5 instance để ẩn modal
+                    const modalEl = document.getElementById('editProfileModal');
+                    const modal = bootstrap.Modal.getInstance(modalEl);
+                    if (modal) modal.hide();
+                    
+                    
+                    // Tải lại dữ liệu mới nhất sau khi lưu thành công
+                    await loadUserData();
+                } else {
+                    showNotification(data.message || 'Cập nhật thất bại', true);
+                }
+            } catch (e) {
+                showNotification('Lỗi cập nhật hồ sơ', true);
+            } finally {
+                btnSubmit.innerHTML = originalBtnText;
+                btnSubmit.disabled = false;
+            }
+        });
+
+        // Preview avatar when selected
+        document.getElementById('editProfileAvatar').addEventListener('change', function(e) {
+            if (this.files && this.files[0]) {
+                document.getElementById('editProfilePreview').src = URL.createObjectURL(this.files[0]);
+            }
+        });
+
+        function logout() {
+            localStorage.removeItem('token');
+            // Nếu có dùng Cookie hoặc Session ở server, nên gọi API /api/auth/logout ở đây
+            window.location.href = '/index.html'; // Chuyển về trang login cụ thể
+        }
+
+        // Socket events
+        socket.on('bidUpdate', (data) => {
+            showNotification(`${data.userId} đã đặt giá ${formatVND(data.bidAmount)}`);
+            loadAuctions();
+        });
+
+        // Initialize
+        checkUserRole().then(valid => {
+            if (valid) {
+                loadUserData();
+                loadAuctions();
+                loadBidHistory();
+                loadWonAuctions(); // Gọi hàm load hàng đã thắng
+            }
+        });
+    </script>
+</body>
+</html>

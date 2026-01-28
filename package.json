@@ -1,0 +1,31 @@
+{
+  "name": "realtime-auction-system",
+  "version": "1.0.0",
+  "description": "Real-time auction system with Socket.io, Redis, SQL Server",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "migrate": "node scripts/migrate.js"
+  },
+  "dependencies": {
+    "axios": "^1.5.0",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.2",
+    "msnodesqlv8": "^5.1.3",
+    "mssql": "^9.3.2",
+    "multer": "^2.0.2",
+    "nodemailer": "^7.0.13",
+    "passport": "^0.6.0",
+    "passport-facebook": "^3.0.0",
+    "passport-google-oauth20": "^2.0.0",
+    "redis": "^4.6.8",
+    "socket.io": "^4.7.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}
