@@ -6,9 +6,11 @@ let lastDbLog = 0;
 
 const connectDB = async () => {
     try {
-        // Đảm bảo đóng kết nối cũ nếu connect lại (VD: hot reload)
-        await sql.close(); 
-        
+        // Kiểm tra nếu đã kết nối thì return luôn, KHÔNG đóng kết nối cũ
+        if (sql.connected || (sql.globalPool && sql.globalPool.connected)) {
+            return true;
+        }
+
         // Chỉ log "Đang kết nối" nếu không phải spam liên tục
         if (Date.now() - lastDbLog > 5000) console.log('🔄 Đang kết nối tới SQL Server...');
 

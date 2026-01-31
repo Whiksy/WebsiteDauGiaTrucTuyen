@@ -69,10 +69,10 @@ router.get('/', async (req, res) => {
             (SELECT COUNT(*) FROM Bids WHERE AuctionId = a.Id) as BidCount,
             u.Name as SellerName, u.Avatar as SellerAvatar,
             hb.Name as HighestBidderName, hb.Avatar as HighestBidderAvatar
-            FROM Auctions a 
-            JOIN Products p ON a.ProductId = p.Id 
-            LEFT JOIN Users u ON p.SellerId = u.Id
-            LEFT JOIN Users hb ON a.HighestBidderId = hb.Id
+            FROM Auctions a WITH (NOLOCK)
+            JOIN Products p WITH (NOLOCK) ON a.ProductId = p.Id 
+            LEFT JOIN Users u WITH (NOLOCK) ON p.SellerId = u.Id
+            LEFT JOIN Users hb WITH (NOLOCK) ON a.HighestBidderId = hb.Id
             WHERE 1=1
         `;
         
@@ -96,8 +96,9 @@ router.get('/', async (req, res) => {
         } else if (status === 'ended') {
             query += ` AND a.EndTime <= GETDATE()`;
         } else {
-            // Mặc định: Chỉ hiển thị đang đấu giá (Active)
-            query += ` AND a.EndTime > GETDATE() AND a.Status = 'Active'`;
+            // FIX: Hiển thị tất cả Active, bao gồm cả những phiên vừa hết giờ đang chờ Cron xử lý (Processing)
+            // Để người dùng không bị hoang mang khi vật phẩm "biến mất"
+            query += ` AND a.Status = 'Active'`;
         }
 
         query += ` ORDER BY CASE WHEN a.EndTime > GETDATE() THEN 0 ELSE 1 END, a.EndTime ASC`;
@@ -117,7 +118,14 @@ router.get('/', async (req, res) => {
             currentBid: Number(auction.CurrentBid || 0),
             bidCount: auction.BidCount,
             endTime: auction.EndTime,
-            status: (new Date(auction.EndTime) > new Date() && auction.Status === 'Active') ? 'active' : 'ended'
+            // FIX: Tính toán trạng thái chính xác hơn
+            status: (() => {
+                const isExpired = new Date(auction.EndTime) <= new Date();
+                if (auction.Status === 'Active') {
+                    return isExpired ? 'processing' : 'active';
+                }
+                return (auction.Status || '').toLowerCase();
+            })()
         }));
         res.setHeader('Cache-Control', 'no-store'); // Đảm bảo dữ liệu luôn mới
         res.json(auctions);
@@ -137,10 +145,9 @@ router.get('/seller/auctions', verifyToken, async (req, res) => {
                 SELECT a.Id, p.Name as productName, 
                        (SELECT TOP 1 ImageUrl FROM ProductImages WHERE ProductId = p.Id ORDER BY Id ASC) as productThumbnail,
                        a.StartingBid as startingPrice, 
-                       a.CurrentBid as currentBid, a.EndTime as endTime,
-                       CASE WHEN a.EndTime > GETDATE() THEN 'active' ELSE 'ended' END as status
-                FROM Auctions a
-                JOIN Products p ON a.ProductId = p.Id
+                       a.CurrentBid as currentBid, a.EndTime as endTime, a.Status
+                FROM Auctions a WITH (NOLOCK)
+                JOIN Products p WITH (NOLOCK) ON a.ProductId = p.Id
                 WHERE p.SellerId = @userId
                 ORDER BY a.CreatedAt DESC
             `);
@@ -152,7 +159,7 @@ router.get('/seller/auctions', verifyToken, async (req, res) => {
             startingPrice: Number(auction.startingPrice),
             currentBid: Number(auction.currentBid || 0),
             endTime: auction.endTime,
-            status: auction.status
+            status: (auction.Status || '').toLowerCase()
         }));
         res.json(auctions);
     } catch (error) {
@@ -169,8 +176,8 @@ router.get('/:id/bids', async (req, res) => {
             .input('id', sql.Int, id)
             .query(`
                 SELECT b.BidAmount, b.BidTime, u.Name, u.Avatar
-                FROM Bids b
-                JOIN Users u ON b.UserId = u.Id
+                FROM Bids b WITH (NOLOCK)
+                JOIN Users u WITH (NOLOCK) ON b.UserId = u.Id
                 WHERE b.AuctionId = @id
                 ORDER BY b.BidAmount DESC
             `);
@@ -206,11 +213,11 @@ router.get('/:id', verifyToken, async (req, res) => {
                 SELECT a.*, p.Name as ProductName, p.Description, p.SellerId,
                 u.Name as SellerName, u.Avatar as SellerAvatar,
             hb.Name as HighestBidderName, hb.Avatar as HighestBidderAvatar,
-                (SELECT COUNT(*) FROM Bids WHERE AuctionId = a.Id) as BidCount
-                FROM Auctions a 
-                LEFT JOIN Products p ON a.ProductId = p.Id 
-                LEFT JOIN Users u ON p.SellerId = u.Id
-                LEFT JOIN Users hb ON a.HighestBidderId = hb.Id
+                (SELECT COUNT(*) FROM Bids WITH (NOLOCK) WHERE AuctionId = a.Id) as BidCount
+                FROM Auctions a WITH (NOLOCK)
+                LEFT JOIN Products p WITH (NOLOCK) ON a.ProductId = p.Id 
+                LEFT JOIN Users u WITH (NOLOCK) ON p.SellerId = u.Id
+                LEFT JOIN Users hb WITH (NOLOCK) ON a.HighestBidderId = hb.Id
                 WHERE a.Id = @id
             `);
 
@@ -219,7 +226,7 @@ router.get('/:id', verifyToken, async (req, res) => {
         const auction = result.recordset[0];
         
         // Lấy danh sách ảnh
-        const imagesRes = await pool.request().input('pid', sql.Int, auction.ProductId).query('SELECT ImageUrl FROM ProductImages WHERE ProductId = @pid ORDER BY Id ASC');
+        const imagesRes = await pool.request().input('pid', sql.Int, auction.ProductId).query('SELECT ImageUrl FROM ProductImages WITH (NOLOCK) WHERE ProductId = @pid ORDER BY Id ASC');
         const images = imagesRes.recordset.map(i => i.ImageUrl);
 
         const response = {
@@ -277,14 +284,18 @@ router.post('/', verifyToken, authorizeRole(['Seller', 'Admin']), async (req, re
         if (new Date(endTime) <= new Date()) {
              return res.status(400).json({ message: 'Thời gian kết thúc phải ở tương lai' });
         }
+        
+        // Debug Log: Kiểm tra thời gian server nhận được để so sánh với thời gian người dùng nhập
+        console.log(`📝 [API] Creating auction. Input EndTime: ${endTime}, Server Time: ${new Date().toISOString()}`);
 
         await pool.request()
             .input('pid', sql.Int, productId)
             .input('title', sql.NVarChar, productCheck.recordset[0].Name)
             .input('price', sql.Decimal(18, 2), startingPrice)
             .input('end', sql.DateTime2, endTime)
-            .query(`INSERT INTO Auctions (ProductId, Title, StartingBid, CurrentBid, EndTime) 
-                    VALUES (@pid, @title, @price, @price, @end)`);
+            // FIX: Thêm Status = 'Active' để đảm bảo phiên đấu giá được kích hoạt ngay lập tức
+            .query(`INSERT INTO Auctions (ProductId, Title, StartingBid, CurrentBid, EndTime, Status) 
+                    VALUES (@pid, @title, @price, @price, @end, 'Active')`);
 
         res.status(201).json({ message: 'Tạo phiên đấu giá thành công' });
     } catch (error) {
@@ -338,9 +349,20 @@ router.post('/:id/bid', verifyToken, async (req, res) => {
         if (!lock) return res.status(409).json({ message: 'Hệ thống đang xử lý, vui lòng thử lại' });
 
         const pool = await sql.connect();
+
+        // KIỂM TRA SỐ DƯ TRƯỚC KHI ĐẶT GIÁ
+        const userBalanceRes = await pool.request()
+            .input('userId', sql.Int, userId)
+            .query('SELECT Money FROM Users WHERE Id = @userId');
+        const userBalance = userBalanceRes.recordset[0]?.Money || 0;
+        if (Number(userBalance) < Number(bidAmount)) {
+            await redisDel(lockKey);
+            return res.status(400).json({ message: 'Số dư trong ví không đủ để đặt giá này.' });
+        }
+
         const result = await pool.request()
             .input('id', sql.Int, id)
-            .query('SELECT a.CurrentBid, a.EndTime, p.SellerId FROM Auctions a JOIN Products p ON a.ProductId = p.Id WHERE a.Id = @id');
+            .query('SELECT a.CurrentBid, a.EndTime, p.SellerId FROM Auctions a WITH (NOLOCK) JOIN Products p WITH (NOLOCK) ON a.ProductId = p.Id WHERE a.Id = @id');
 
         if (result.recordset.length === 0) {
             await redisDel(lockKey);

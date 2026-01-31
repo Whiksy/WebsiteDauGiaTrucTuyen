@@ -102,7 +102,7 @@ router.post('/login', async (req, res) => {
     // 1. Tìm user theo Email
     const result = await pool.request()
       .input('email', sql.VarChar, email)
-      .query('SELECT Id, Email, Password, Name, Avatar FROM Users WHERE Email = @email');
+      .query('SELECT Id, Email, Password, Name, Avatar, Money FROM Users WHERE Email = @email');
 
     if (result.recordset.length === 0) {
       return res.status(401).json({ message: 'Email hoặc mật khẩu không đúng' });
@@ -138,6 +138,7 @@ router.post('/login', async (req, res) => {
             email: user.Email, 
             name: user.Name, 
             avatar: user.Avatar,
+            balance: user.Money || 0,
             roles: roles // Quan trọng: Frontend sẽ dùng biến này để chuyển hướng
         } 
     });
@@ -155,7 +156,7 @@ router.get('/me', verifyToken, async (req, res) => {
         // 1. Get User Info
         const userRes = await pool.request()
             .input('id', sql.Int, req.userId)
-            .query('SELECT Id, Email, Name, Avatar FROM Users WHERE Id = @id');
+            .query('SELECT Id, Email, Name, Avatar, Money FROM Users WHERE Id = @id');
             
         if (userRes.recordset.length === 0) {
             return res.status(404).json({ message: 'User not found' });
@@ -175,6 +176,7 @@ router.get('/me', verifyToken, async (req, res) => {
             email: user.Email, 
             name: user.Name, 
             avatar: user.Avatar, 
+            balance: user.Money || 0,
             roles 
         });
     } catch (error) {

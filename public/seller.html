@@ -104,10 +104,19 @@
                     <li class="nav-item"><a class="nav-link" href="#dashboard">Bảng điều khiển</a></li>
                     <li class="nav-item"><a class="nav-link" href="#products">Sản phẩm</a></li>
                     <li class="nav-item"><a class="nav-link" href="#auctions">Đấu giá</a></li>
+                    <!-- Wallet Dropdown -->
+                    <li class="nav-item dropdown ms-3">
+                        <a class="nav-link dropdown-toggle fw-bold text-success" href="#" id="walletDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-wallet"></i> <span id="walletBalance">0 ₫</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#depositModal"><i class="fas fa-plus-circle text-primary me-2"></i>Nạp tiền</a></li>
+                        </ul>
+                    </li>
                     <!-- Dropdown User -->
                     <li class="nav-item dropdown ms-3">
                         <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="sellerDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <img id="navAvatar" src="https://via.placeholder.com/30" class="rounded-circle me-2" width="30" height="30" style="object-fit: cover;">
+                            <img id="navAvatar" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMCIgaGVpZ2h0PSIzMCI+PHJlY3Qgd2lkdGg9IjMwIiBoZWlnaHQ9IjMwIiBmaWxsPSIjY2NjIi8+PC9zdmc+" class="rounded-circle me-2" width="30" height="30" style="object-fit: cover;">
                             <span id="navName">Seller</span>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="sellerDropdown">
@@ -234,6 +243,28 @@
         </section>
     </div>
 
+    <!-- Deposit Modal -->
+    <div class="modal fade" id="depositModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Nạp tiền vào ví</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="depositForm">
+                        <div class="mb-3">
+                            <label class="form-label">Số tiền muốn nạp (VND)</label>
+                            <input type="number" class="form-control" id="depositAmount" min="1000" step="1000" placeholder="Ví dụ: 50000" required>
+                            <div class="form-text">Tối thiểu 1.000 VNĐ. Bạn sẽ được chuyển hướng sang Momo để thanh toán.</div>
+                        </div>
+                        <button type="submit" class="btn btn-success w-100">Tiếp tục thanh toán Momo</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Add Product Modal -->
     <div class="modal fade" id="addProductModal" tabindex="-1">
         <div class="modal-dialog">
@@ -350,7 +381,7 @@
                 <div class="modal-body">
                     <form id="editProfileForm">
                         <div class="text-center mb-3">
-                            <img id="editProfilePreview" src="https://via.placeholder.com/100" class="rounded-circle border" width="100" height="100" style="object-fit: cover;">
+                            <img id="editProfilePreview" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2VlZSIvPjwvc3ZnPg==" class="rounded-circle border" width="100" height="100" style="object-fit: cover;">
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Họ tên</label>
@@ -593,35 +624,36 @@
                         devLog('Auth', 'Access denied: User is not a Seller', true);
                         showNotification('Bạn không có quyền truy cập trang này', true);
                         setTimeout(() => window.location.href = '/', 2000);
-                        return false;
+                        return null;
                     }
-                    return true;
+                    return userData;
                 } else {
                     devLog('Auth', `Fetch failed with status: ${response.status}`, true);
                     logout();
-                    return false;
+                    return null;
                 }
             } catch (e) {
                 devLog('Auth/checkSellerRole', e, true);
                 logout();
-                return false;
+                return null;
             }
         }
 
-        async function loadSellerData() {
+        async function loadSellerData(userData) {
+            // Nếu đã có dữ liệu từ bước checkRole, dùng luôn không cần gọi API lại
+            if (userData) {
+                currentSeller = userData;
+                updateSellerUI();
+                return;
+            }
+
             try {
                 const response = await fetch('/api/auth/me', {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 if (response.ok) {
                     currentSeller = await response.json();
-                    document.getElementById('sellerName').textContent = currentSeller.name || 'Người bán';
-                    
-                    // Update Navbar Info
-                    document.getElementById('navName').textContent = currentSeller.name || 'Seller';
-                    if (currentSeller.avatar) {
-                        document.getElementById('navAvatar').src = currentSeller.avatar;
-                    }
+                    updateSellerUI();
                 } else {
                     devLog('API/loadSellerData', 'Failed to fetch user data', true);
                     logout();
@@ -631,6 +663,67 @@
                 logout();
             }
         }
+
+        function updateSellerUI() {
+            document.getElementById('sellerName').textContent = currentSeller.name || 'Người bán';
+            
+            // Update Navbar Info
+            document.getElementById('navName').textContent = currentSeller.name || 'Seller';
+            if (currentSeller.avatar) {
+                document.getElementById('navAvatar').src = currentSeller.avatar;
+            }
+
+            // Load Wallet & Join Socket
+            loadWalletBalance();
+            socket.emit('joinUser', currentSeller.id);
+        }
+
+        // --- WALLET LOGIC ---
+        async function loadWalletBalance() {
+            try {
+                const response = await fetch('/api/user/balance', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('walletBalance').textContent = formatVND(data.balance);
+                }
+            } catch (e) { devLog('Wallet', e, true); }
+        }
+
+        document.getElementById('depositForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const amount = document.getElementById('depositAmount').value;
+            const btn = e.target.querySelector('button');
+            
+            if (!amount || amount < 1000) {
+                showNotification('Số tiền tối thiểu là 1.000đ', true);
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = 'Đang xử lý...';
+
+            try {
+                const response = await fetch('/api/payment/deposit', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ amount: Number(amount) })
+                });
+                const data = await response.json();
+                if (data.payUrl) {
+                    window.location.href = data.payUrl;
+                } else {
+                    showNotification(data.message || 'Lỗi tạo giao dịch', true);
+                    btn.disabled = false;
+                    btn.textContent = 'Tiếp tục thanh toán Momo';
+                }
+            } catch (e) {
+                showNotification('Lỗi kết nối', true);
+                btn.disabled = false;
+                btn.textContent = 'Tiếp tục thanh toán Momo';
+            }
+        });
 
         async function loadProducts() {
       devLog('API', 'Loading product list...');
@@ -660,7 +753,7 @@
               const col = document.createElement('div');
               col.className = 'col-md-4 mb-4 fade-in';
               const productName = product.Name || 'Sản phẩm';
-              const imgSrc = product.Thumbnail || `https://via.placeholder.com/300x200/4facfe/ffffff?text=${encodeURIComponent(productName)}`;
+              const imgSrc = product.Thumbnail || '';
               col.innerHTML = `
                   <div class="card product-card h-100">
                       <div class="position-relative" style="cursor: pointer;" onclick="viewProductDetails(${product.Id})">
@@ -706,7 +799,8 @@
   async function loadAuctions() {
       devLog('API', 'Loading auctions...');
       try {
-          const response = await fetch('/api/seller/auctions', {
+          // Thêm timestamp để tránh cache trình duyệt
+          const response = await fetch(`/api/seller/auctions?t=${Date.now()}`, {
               headers: { 'Authorization': `Bearer ${token}` }
           });
 
@@ -727,9 +821,16 @@
           tbody.innerHTML = '';
 
           auctionData.forEach(auction => {
-            const isActive = (auction.status || '').toLowerCase() === 'active';
+            const status = (auction.status || '').toLowerCase();
+            const isActive = status === 'active';
+            const isProcessing = status === 'processing';
             const hasBids = (auction.currentBid > auction.startingPrice) || (auction.bidCount > 0); // Logic đơn giản check bid
             
+            let statusBadge = '';
+            if (isActive) statusBadge = '<span class="badge bg-success">Đang diễn ra</span>';
+            else if (isProcessing) statusBadge = '<span class="badge bg-warning text-dark">Đang xử lý</span>';
+            else statusBadge = '<span class="badge bg-secondary">Đã kết thúc</span>';
+
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td><img src="${auction.image || ''}" width="50" height="50" class="rounded object-fit-cover" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI1MCIgaGVpZ2h0PSI1MCI+PHJlY3Qgd2lkdGg9IjUwIiBoZWlnaHQ9IjUwIiBmaWxsPSIjY2NjIi8+PC9zdmc+'"></td>
@@ -737,20 +838,16 @@
                 <td>${formatVND(auction.startingPrice)}</td>
                 <td>${formatVND(auction.currentBid)}</td>
                 <td>${new Date(auction.endTime).toLocaleString('vi-VN')}</td>
-                <td>
-                    <span class="badge bg-${auction.status === 'active' ? 'success' : 'secondary'}">
-                        ${auction.status === 'active' ? 'Đang diễn ra' : 'Đã kết thúc'}
-                    </span>
-                </td>
+                <td>${statusBadge}</td>
                 <td>
                     <button class="btn btn-outline-info btn-sm" onclick="viewAuctionDetails(${auction.id})">Chi tiết</button>
                     
-                    ${isActive 
+                    ${isActive
                         ? `<button class="btn btn-outline-warning btn-sm" onclick="endAuction(${auction.id})" title="Kết thúc ngay"><i class="fas fa-stop-circle"></i></button>` 
                         : (!hasBids ? `<button class="btn btn-outline-primary btn-sm" onclick="relistAuction(${auction.id})" title="Đăng lại"><i class="fas fa-redo"></i></button>` : '')
                     }
                     
-                    ${!hasBids && !isActive 
+                    ${!hasBids && !isActive && !isProcessing
                         ? `<button class="btn btn-outline-danger btn-sm" onclick="deleteAuction(${auction.id})" title="Xóa"><i class="fas fa-trash"></i></button>` 
                         : ''
                     }
@@ -794,7 +891,7 @@
                         <td>${formatVND(item.soldPrice)}</td>
                         <td>
                             <div class="d-flex align-items-center">
-                                <img src="${item.buyerAvatar || 'https://via.placeholder.com/30'}" width="30" height="30" class="rounded-circle me-2">
+                                <img src="${item.buyerAvatar || ''}" width="30" height="30" class="rounded-circle me-2" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMCIgaGVpZ2h0PSIzMCI+PHJlY3Qgd2lkdGg9IjMwIiBoZWlnaHQ9IjMwIiBmaWxsPSIjY2NjIi8+PC9zdmc+'">
                                 <div>
                                     <div>${item.buyerName}</div>
                                     <small class="text-muted">${item.buyerEmail}</small>
@@ -817,9 +914,20 @@
               method: 'POST',
               headers: { 'Authorization': `Bearer ${token}` }
           });
-          if(res.ok) { showNotification('Đã kết thúc phiên đấu giá'); loadAuctions(); }
-          else showNotification('Lỗi kết thúc', true);
-      } catch(e) { showNotification('Lỗi server', true); }
+          
+          const data = await res.json();
+          if(res.ok) { 
+              showNotification(data.message || 'Đã kết thúc phiên đấu giá'); 
+              loadAuctions(); // Tải lại để cập nhật trạng thái mới
+          } else { 
+              showNotification(data.message || 'Lỗi kết thúc', true);
+              // Vẫn tải lại danh sách để đồng bộ trạng thái nếu bị lệch
+              loadAuctions(); 
+          }
+      } catch(e) { 
+          console.error(e);
+          showNotification('Lỗi kết nối server', true); 
+      }
   }
 
   async function deleteAuction(id) {
@@ -1163,7 +1271,7 @@
                         listImg.appendChild(img);
                     });
                 } else {
-                    carouselInner.innerHTML = `<div class="carousel-item active"><img src="https://via.placeholder.com/400x300?text=No+Image" class="d-block w-100 rounded"></div>`;
+                    carouselInner.innerHTML = `<div class="carousel-item active"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0iI2VlZSIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjNTU1Ij5ObyBJbWFnZTwvdGV4dD48L3N2Zz4=" class="d-block w-100 rounded"></div>`;
                 }
 
                 new bootstrap.Modal(document.getElementById('productDetailModal')).show();
@@ -1226,7 +1334,7 @@
                         listImg.appendChild(img);
                     });
                 } else {
-                    carouselInner.innerHTML = `<div class="carousel-item active"><img src="https://via.placeholder.com/400x300?text=No+Image" class="d-block w-100 rounded"></div>`;
+                    carouselInner.innerHTML = `<div class="carousel-item active"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0iI2VlZSIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjNTU1Ij5ObyBJbWFnZTwvdGV4dD48L3N2Zz4=" class="d-block w-100 rounded"></div>`;
                 }
 
                 // Lịch sử bid
@@ -1252,6 +1360,14 @@
                 showNotification('Lỗi tải chi tiết đấu giá', true);
             }
         }
+
+        // Socket: Thông báo sản phẩm đã bán
+        socket.on('productSold', (data) => {
+            showNotification(data.message);
+            loadAuctions();    // Cập nhật danh sách đấu giá (chuyển sang Ended)
+            loadSoldItems();   // Cập nhật danh sách hàng đã bán
+            loadWalletBalance(); // Cập nhật số dư ví
+        });
 
         // Socket events: Lắng nghe sự kiện đặt giá mới
         socket.on('bidUpdate', async (data) => {
@@ -1294,6 +1410,12 @@
             }
         });
 
+        // Socket: Balance Update
+        socket.on('balanceUpdate', (data) => {
+            document.getElementById('walletBalance').textContent = formatVND(data.balance);
+            showNotification(`💰 Số dư ví đã được cập nhật: ${formatVND(data.balance)}`);
+        });
+
         // Reset ID khi đóng modal để tránh update sai
         document.getElementById('auctionDetailModal').addEventListener('hidden.bs.modal', () => {
             currentViewingAuctionId = null;
@@ -1308,9 +1430,9 @@
         // Initialize App
         (async () => {
             devLog('System', 'Initializing Seller Dashboard...');
-            const valid = await checkSellerRole();
-            if (valid) {
-                await loadSellerData();
+            const userData = await checkSellerRole();
+            if (userData) {
+                await loadSellerData(userData);
                 await loadProducts();
                 await loadAuctions();
                 await loadSoldItems(); // Load thêm hàng đã bán

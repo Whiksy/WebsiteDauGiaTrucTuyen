@@ -50,9 +50,9 @@ router.get('/bids', verifyToken, async (req, res) => {
                ISNULL(p.Name, a.Title) as productName,
                (SELECT TOP 1 ImageUrl FROM ProductImages WHERE ProductId = p.Id ORDER BY Id ASC) as Thumbnail,
                CASE WHEN a.EndTime > GETDATE() THEN 'active' ELSE CASE WHEN a.HighestBidderId = @userId THEN 'won' ELSE 'lost' END END as status
-        FROM Bids b
-        JOIN Auctions a ON b.AuctionId = a.Id
-        JOIN Products p ON a.ProductId = p.Id
+        FROM Bids b WITH (NOLOCK)
+        JOIN Auctions a WITH (NOLOCK) ON b.AuctionId = a.Id
+        JOIN Products p WITH (NOLOCK) ON a.ProductId = p.Id
         WHERE b.UserId = @userId
         ORDER BY b.BidTime DESC
       `);
@@ -86,10 +86,10 @@ router.get('/participating', verifyToken, async (req, res) => {
                        hb.Name as HighestBidderName, hb.Avatar as HighestBidderAvatar,
                        s.Name as SellerName, s.Avatar as SellerAvatar,
                        (SELECT COUNT(*) FROM Bids WHERE AuctionId = a.Id) as BidCount
-                FROM Auctions a
-                JOIN Products p ON a.ProductId = p.Id
-                LEFT JOIN Users s ON p.SellerId = s.Id
-                LEFT JOIN Users hb ON a.HighestBidderId = hb.Id
+                FROM Auctions a WITH (NOLOCK)
+                JOIN Products p WITH (NOLOCK) ON a.ProductId = p.Id
+                LEFT JOIN Users s WITH (NOLOCK) ON p.SellerId = s.Id
+                LEFT JOIN Users hb WITH (NOLOCK) ON a.HighestBidderId = hb.Id
                 WHERE a.Id IN (SELECT DISTINCT AuctionId FROM Bids WHERE UserId = @userId)
                 AND a.EndTime > GETDATE()
                 ORDER BY a.EndTime ASC
@@ -130,11 +130,14 @@ router.get('/won-auctions', verifyToken, async (req, res) => {
         SELECT a.Id as auctionId, ISNULL(p.Name, a.Title) as productName, a.CurrentBid as winningPrice, a.EndTime,
                s.Id as SellerId, s.Name as SellerName, s.Avatar as SellerAvatar,
                (SELECT TOP 1 ImageUrl FROM ProductImages WHERE ProductId = p.Id ORDER BY Id ASC) as Thumbnail,
-               ISNULL(pay.Status, 'Pending') as paymentStatus
-        FROM Auctions a
-        JOIN Products p ON a.ProductId = p.Id
-        LEFT JOIN Users s ON p.SellerId = s.Id
-        LEFT JOIN Payments pay ON pay.AuctionId = a.Id
+               CASE 
+                    WHEN a.Status = 'PaymentFailed' THEN 'PaymentFailed'
+                    ELSE ISNULL(pay.Status, 'Pending') 
+               END as paymentStatus
+        FROM Auctions a WITH (NOLOCK)
+        JOIN Products p WITH (NOLOCK) ON a.ProductId = p.Id
+        LEFT JOIN Users s WITH (NOLOCK) ON p.SellerId = s.Id
+        LEFT JOIN Payments pay WITH (NOLOCK) ON pay.AuctionId = a.Id AND pay.Type = 'Wallet'
         WHERE a.HighestBidderId = @userId 
           AND a.EndTime < GETDATE()
         ORDER BY a.EndTime DESC
@@ -166,18 +169,68 @@ router.get('/profile', verifyToken, async (req, res) => {
     const pool = await sql.connect();
     const result = await pool.request()
       .input('userId', sql.Int, userId)
-      .query('SELECT Id, Email, Name, Avatar FROM Users WHERE Id = @userId');
+      .query('SELECT Id, Email, Name, Avatar, Money FROM Users WITH (NOLOCK) WHERE Id = @userId');
 
     if (result.recordset.length === 0) {
       return res.status(404).json({ message: 'User not found' });
     }
 
     const user = result.recordset[0];
-    res.json({ id: user.Id, email: user.Email, name: user.Name, avatar: user.Avatar });
+    res.json({ id: user.Id, email: user.Email, name: user.Name, avatar: user.Avatar, balance: user.Money || 0 });
   } catch (error) {
     console.error('GET /api/user/profile error:', error && (error.stack || error));
     res.status(500).json({ error: error.message });
   }
+});
+
+// Lấy số dư ví (API nhẹ để polling hoặc refresh số dư)
+router.get('/balance', verifyToken, async (req, res) => {
+    const userId = req.userId;
+    try {
+        const pool = await sql.connect();
+        const result = await pool.request()
+            .input('id', sql.Int, userId)
+            .query('SELECT Money FROM Users WITH (NOLOCK) WHERE Id = @id');
+
+        if (result.recordset.length === 0) return res.status(404).json({ message: 'User not found' });
+
+        res.json({ balance: result.recordset[0].Money || 0 });
+    } catch (error) {
+        console.error('GET /api/user/balance error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Lấy lịch sử giao dịch (Nạp tiền & Thanh toán)
+router.get('/transactions', verifyToken, async (req, res) => {
+    const userId = req.userId;
+    try {
+        const pool = await sql.connect();
+        const result = await pool.request()
+            .input('userId', sql.Int, userId)
+            .query(`
+                SELECT p.Id, p.Amount, p.Status, p.Type, p.CreatedAt, p.MomoOrderId,
+                       a.Title as AuctionTitle
+                FROM Payments p WITH (NOLOCK)
+                LEFT JOIN Auctions a WITH (NOLOCK) ON p.AuctionId = a.Id
+                WHERE p.UserId = @userId
+                ORDER BY p.CreatedAt DESC
+            `);
+
+        const transactions = result.recordset.map(t => ({
+            id: t.Id,
+            amount: t.Amount,
+            status: t.Status,
+            type: t.Type,
+            description: t.Type === 'Deposit' ? 'Nạp tiền vào ví' : `Thanh toán đấu giá: ${t.AuctionTitle || 'Unknown'}`,
+            createdAt: t.CreatedAt,
+            formattedAmount: new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(t.Amount)
+        }));
+        res.json(transactions);
+    } catch (error) {
+        console.error('GET /api/user/transactions error:', error);
+        res.status(500).json({ error: error.message });
+    }
 });
 
 // Update user profile
@@ -237,7 +290,7 @@ router.get('/public/:id', async (req, res) => {
         const pool = await sql.connect();
         const result = await pool.request()
             .input('id', sql.Int, id)
-            .query('SELECT Id, Name, Avatar, CreatedAt FROM Users WHERE Id = @id');
+            .query('SELECT Id, Name, Avatar, CreatedAt FROM Users WITH (NOLOCK) WHERE Id = @id');
 
         if (result.recordset.length === 0) {
             return res.status(404).json({ message: 'User not found' });

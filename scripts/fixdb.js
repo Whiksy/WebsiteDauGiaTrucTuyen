@@ -67,6 +67,25 @@ const config = require('../config/appsettings');
         await pool.request().query("ALTER TABLE Users ADD ResetToken VARCHAR(256), ResetTokenExpiry DATETIME2");
     }
 
+    // Check & Fix Users table (Money/Balance column)
+    const moneyCheck = await pool.request().query("SELECT COL_LENGTH('Users', 'Money') AS Len");
+    if (moneyCheck.recordset[0].Len !== null) {
+        console.log('✅ Column Users.Money already exists.');
+    } else {
+        console.log('Column Users.Money does not exist. Checking for Users.Balance...');
+        // Check for Balance column
+        const balanceCheck = await pool.request().query("SELECT COL_LENGTH('Users', 'Balance') AS Len");
+        if (balanceCheck.recordset[0].Len !== null) {
+            console.log('🛠 Found Users.Balance column. Renaming to Money...');
+            await pool.request().query("EXEC sp_rename 'Users.Balance', 'Money', 'COLUMN';");
+            console.log('✅ Renamed Users.Balance to Users.Money.');
+        } else {
+            console.log('🛠 Neither Money nor Balance found. Adding Money column to Users table...');
+            await pool.request().query("ALTER TABLE Users ADD Money DECIMAL(18, 2) DEFAULT 0;");
+            console.log('✅ Added Money column to Users table.');
+        }
+    }
+
     // Check Products table
     const productsExist = await pool.request().query("SELECT OBJECT_ID('Products') AS Id");
     if (productsExist.recordset[0].Id) {
@@ -157,16 +176,36 @@ const config = require('../config/appsettings');
         await pool.request().query(`
             CREATE TABLE Payments (
                 Id INT IDENTITY(1,1) PRIMARY KEY,
-                AuctionId INT NOT NULL,
+                AuctionId INT NULL,
                 UserId INT NOT NULL,
                 Amount DECIMAL(18,2) NOT NULL,
                 Status NVARCHAR(50) DEFAULT 'Pending',
+                Type NVARCHAR(50) DEFAULT 'Auction',
                 MomoOrderId NVARCHAR(256),
                 CreatedAt DATETIME2 DEFAULT GETDATE(),
                 FOREIGN KEY (AuctionId) REFERENCES Auctions(Id),
                 FOREIGN KEY (UserId) REFERENCES Users(Id)
             );
         `);
+    } else {
+        // Migration: Add Type column if missing
+        const typeCheck = await pool.request().query("SELECT COL_LENGTH('Payments', 'Type') AS Len");
+        if (typeCheck.recordset[0].Len === null) {
+            console.log('🛠 Adding missing column: Type to Payments table...');
+            await pool.request().query("ALTER TABLE Payments ADD Type NVARCHAR(50) DEFAULT 'Auction'");
+        }
+
+        // Migration: Make AuctionId nullable
+        const auctionIdCheck = await pool.request().query(`
+            SELECT IS_NULLABLE 
+            FROM INFORMATION_SCHEMA.COLUMNS 
+            WHERE TABLE_NAME = 'Payments' AND COLUMN_NAME = 'AuctionId'
+        `);
+        
+        if (auctionIdCheck.recordset.length > 0 && auctionIdCheck.recordset[0].IS_NULLABLE === 'NO') {
+             console.log('🛠 Altering Payments.AuctionId to be NULLABLE...');
+             await pool.request().query("ALTER TABLE Payments ALTER COLUMN AuctionId INT NULL");
+        }
     }
 
     console.log('Migration completed.');

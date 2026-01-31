@@ -114,10 +114,19 @@
                     <li class="nav-item"><a class="nav-link" href="#won-items">Đã thắng</a></li>
                     <li class="nav-item"><a class="nav-link" href="#history">Lịch sử</a></li>
                     <li class="nav-item"><a class="nav-link" href="#profile">Hồ sơ</a></li>
+                    <!-- Wallet Dropdown -->
+                    <li class="nav-item dropdown ms-3">
+                        <a class="nav-link dropdown-toggle fw-bold text-success" href="#" id="walletDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-wallet"></i> <span id="walletBalance">0 ₫</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#depositModal"><i class="fas fa-plus-circle text-primary me-2"></i>Nạp tiền</a></li>
+                        </ul>
+                    </li>
                     <!-- Dropdown User -->
                     <li class="nav-item dropdown ms-3">
                         <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <img id="navAvatar" src="https://via.placeholder.com/30" class="rounded-circle me-2" width="30" height="30" style="object-fit: cover;">
+                            <img id="navAvatar" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMCIgaGVpZ2h0PSIzMCI+PHJlY3Qgd2lkdGg9IjMwIiBoZWlnaHQ9IjMwIiBmaWxsPSIjY2NjIi8+PC9zdmc+" class="rounded-circle me-2" width="30" height="30" style="object-fit: cover;">
                             <span id="navName">User</span>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
@@ -186,7 +195,7 @@
                     <div class="card">
                         <div class="card-body">
                             <div class="text-center mb-3">
-                                <img id="profileAvatar" src="https://via.placeholder.com/150" class="rounded-circle shadow-sm" style="width: 120px; height: 120px; object-fit: cover;">
+                                <img id="profileAvatar" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNTAiIGhlaWdodD0iMTUwIj48cmVjdCB3aWR0aD0iMTUwIiBoZWlnaHQ9IjE1MCIgZmlsbD0iI2VlZSIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjNTU1Ij5BdmF0YXI8L3RleHQ+PC9zdmc+" class="rounded-circle shadow-sm" style="width: 120px; height: 120px; object-fit: cover;">
                             </div>
                             <h5 class="card-title">Thông tin tài khoản</h5>
                             <p><strong>Email:</strong> <span id="userEmail"></span></p>
@@ -221,7 +230,7 @@
                 <div class="modal-body">
                     <form id="editProfileForm">
                         <div class="text-center mb-3">
-                            <img id="editProfilePreview" src="https://via.placeholder.com/100" class="rounded-circle border" width="100" height="100" style="object-fit: cover;">
+                            <img id="editProfilePreview" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2VlZSIvPjwvc3ZnPg==" class="rounded-circle border" width="100" height="100" style="object-fit: cover;">
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Họ tên</label>
@@ -244,6 +253,28 @@
                             <input type="file" class="form-control" id="editProfileAvatar" accept="image/*">
                         </div>
                         <button type="submit" class="btn btn-primary w-100">Lưu thay đổi</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Deposit Modal -->
+    <div class="modal fade" id="depositModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Nạp tiền vào ví</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="depositForm">
+                        <div class="mb-3">
+                            <label class="form-label">Số tiền muốn nạp (VND)</label>
+                            <input type="number" class="form-control" id="depositAmount" min="1000" step="1000" placeholder="Ví dụ: 50000" required>
+                            <div class="form-text">Tối thiểu 1.000 VNĐ. Bạn sẽ được chuyển hướng sang Momo để thanh toán.</div>
+                        </div>
+                        <button type="submit" class="btn btn-success w-100">Tiếp tục thanh toán Momo</button>
                     </form>
                 </div>
             </div>
@@ -322,49 +353,35 @@
                     if (!roles.includes('User')) {
                         showNotification('Bạn không có quyền truy cập trang này', true);
                         setTimeout(() => window.location.href = '/', 2000);
-                        return false;
+                        return null;
                     }
-                    return true;
+                    return userData;
                 } else {
                     logout();
-                    return false;
+                    return null;
                 }
             } catch (e) {
                 console.error('Role check error:', e);
                 logout();
-                return false;
+                return null;
             }
         }
 
         // Load user data
-        async function loadUserData() {
+        async function loadUserData(userData) {
+            if (userData) {
+                currentUser = userData;
+                updateUserUI();
+                return;
+            }
+
             try {
                 const response = await fetch('/api/auth/me', {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 if (response.ok) {
                     currentUser = await response.json();
-                    
-                    const userNameEl = document.getElementById('userName');
-                    if (userNameEl) userNameEl.textContent = currentUser.name || 'Người dùng';
-                    
-                    const userEmailEl = document.getElementById('userEmail');
-                    if (userEmailEl) userEmailEl.textContent = currentUser.email || '';
-                    
-                    const userFullNameEl = document.getElementById('userFullName');
-                    if (userFullNameEl) userFullNameEl.textContent = currentUser.name || '';
-                    
-                    // Update Profile Avatar
-                    const profileAvatar = document.getElementById('profileAvatar');
-                    if (profileAvatar) {
-                        profileAvatar.src = currentUser.avatar || 'https://via.placeholder.com/150';
-                    }
-
-                    // Update Navbar Info
-                    document.getElementById('navName').textContent = currentUser.name || 'User';
-                    if (currentUser.avatar) {
-                        document.getElementById('navAvatar').src = currentUser.avatar;
-                    }
+                    updateUserUI();
                 } else {
                     console.error('Failed to load user data:', response.status);
                     showNotification('Không thể tải thông tin người dùng', true);
@@ -375,6 +392,80 @@
                 showNotification('Lỗi tải thông tin người dùng', true);
             }
         }
+
+        function updateUserUI() {
+            const userNameEl = document.getElementById('userName');
+            if (userNameEl) userNameEl.textContent = currentUser.name || 'Người dùng';
+            
+            const userEmailEl = document.getElementById('userEmail');
+            if (userEmailEl) userEmailEl.textContent = currentUser.email || '';
+            
+            const userFullNameEl = document.getElementById('userFullName');
+            if (userFullNameEl) userFullNameEl.textContent = currentUser.name || '';
+            
+            // Update Profile Avatar
+            const profileAvatar = document.getElementById('profileAvatar');
+            if (profileAvatar && currentUser.avatar) {
+                profileAvatar.src = currentUser.avatar;
+            }
+
+            // Update Navbar Info
+            document.getElementById('navName').textContent = currentUser.name || 'User';
+            if (currentUser.avatar) {
+                document.getElementById('navAvatar').src = currentUser.avatar;
+            }
+
+            // Load Wallet Balance & Join Socket Room
+            loadWalletBalance();
+            socket.emit('joinUser', currentUser.id);
+        }
+
+        // --- WALLET LOGIC ---
+        async function loadWalletBalance() {
+            try {
+                const response = await fetch('/api/user/balance', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('walletBalance').textContent = formatVND(data.balance);
+                }
+            } catch (e) { console.error('Load balance error:', e); }
+        }
+
+        document.getElementById('depositForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const amount = document.getElementById('depositAmount').value;
+            const btn = e.target.querySelector('button');
+            
+            if (!amount || amount < 1000) {
+                showNotification('Số tiền tối thiểu là 1.000đ', true);
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = 'Đang xử lý...';
+
+            try {
+                const response = await fetch('/api/payment/deposit', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ amount: Number(amount) })
+                });
+                const data = await response.json();
+                if (data.payUrl) {
+                    window.location.href = data.payUrl;
+                } else {
+                    showNotification(data.message || 'Lỗi tạo giao dịch', true);
+                    btn.disabled = false;
+                    btn.textContent = 'Tiếp tục thanh toán Momo';
+                }
+            } catch (e) {
+                showNotification('Lỗi kết nối', true);
+                btn.disabled = false;
+                btn.textContent = 'Tiếp tục thanh toán Momo';
+            }
+        });
 
         // Event listener to populate modal when opened (Like Facebook)
         const editProfileModal = document.getElementById('editProfileModal');
@@ -409,9 +500,9 @@
 
                     col.innerHTML = `
                         <div class="card auction-card">
-                            <img src="${auction.image || 'https://via.placeholder.com/300x200?text=No+Image'}" 
+                            <img src="${auction.image || ''}" 
                                 alt="${auction.productName}"
-                                onerror="this.src='https://via.placeholder.com/300x200?text=Error'">
+                                onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iMjAwIj48cmVjdCB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2VlZSIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjNTU1Ij5Ob24tSW1hZ2U8L3RleHQ+PC9zdmc+'">
                             <div class="card-body">
                                 <h5 class="card-title text-truncate">${auction.productName}</h5>
                                 <p class="card-text">Giá hiện tại: <strong class="text-danger">${formatVND(auction.currentBid)}</strong></p>
@@ -503,53 +594,49 @@
                     container.innerHTML = '<div class="col-12"><p class="text-muted">Bạn chưa thắng phiên đấu giá nào.</p></div>';
                     return;
                 }
-
+                
                 auctions.forEach(a => {
                     const col = document.createElement('div');
                     col.className = 'col-md-4 mb-4 fade-in';
-                    const isPaid = a.paymentStatus === 'Paid';
+
+                    let headerClass = 'warning';
+                    let headerText = 'Chờ xử lý';
+                    let buttonHtml = `<button class="btn btn-warning w-100" disabled><span class="spinner-border spinner-border-sm"></span> Đang xử lý</button>`;
+                    let footerText = `<p class="small text-muted">Hệ thống sẽ tự động trừ tiền từ ví của bạn.</p>`;
+
+                    if (a.paymentStatus === 'Paid') {
+                        headerClass = 'success';
+                        headerText = 'Đã thanh toán';
+                        buttonHtml = '<button class="btn btn-success w-100" disabled>Hoàn tất</button>';
+                        footerText = '';
+                    } else if (a.paymentStatus === 'PaymentFailed') {
+                        headerClass = 'danger';
+                        headerText = 'Thanh toán thất bại';
+                        buttonHtml = '<button class="btn btn-secondary w-100" disabled>Thanh toán lỗi</button>';
+                        footerText = `<p class="small text-danger">Số dư không đủ tại thời điểm kết thúc. Vui lòng nạp thêm tiền.</p>`;
+                    }
                     
                     col.innerHTML = `
-                        <div class="card border-${isPaid ? 'success' : 'warning'} h-100">
-                            <div class="card-header bg-${isPaid ? 'success' : 'warning'} text-white">
-                                ${isPaid ? 'Đã thanh toán' : 'Chờ thanh toán'}
+                        <div class="card border-${headerClass} h-100">
+                            <div class="card-header bg-${headerClass} ${headerClass === 'warning' ? 'text-dark' : 'text-white'}">
+                                ${headerText}
                             </div>
-                            <img src="${a.image || 'https://via.placeholder.com/300'}" class="card-img-top" style="height: 200px; object-fit: cover;">
-                            <div class="card-body">
-                                <h5 class="card-title">${a.productName}</h5>
+                            <img src="${a.image || ''}" class="card-img-top" style="height: 200px; object-fit: cover;" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iMjAwIj48cmVjdCB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2VlZSIvPjwvc3ZnPg=='">
+                            <div class="card-body d-flex flex-column">
+                                <h5 class="card-title text-truncate">${a.productName}</h5>
                                 <p>Giá thắng: <strong>${formatVND(a.winningPrice)}</strong></p>
                                 <p class="small text-muted">Người bán: ${a.sellerName}</p>
-                                ${!isPaid ? `<button class="btn btn-primary w-100" onclick="payForAuction(${a.winningPrice}, '${a.auctionId}')">Thanh toán Momo</button>` : '<button class="btn btn-success w-100" disabled>Hoàn tất</button>'}
+                                <div class="mt-auto">
+                                    ${footerText}
+                                    ${buttonHtml}
+                                </div>
                             </div>
                         </div>
                     `;
                     container.appendChild(col);
                 });
-                
-                // Cập nhật thống kê
-                document.getElementById('wins').textContent = auctions.length;
             } catch (e) {
                 console.error('Load won auctions error', e);
-            }
-        }
-
-        // BỔ SUNG: Hàm thanh toán
-        async function payForAuction(amount, orderIdPrefix) {
-            try {
-                const orderId = `ORDER_${orderIdPrefix}_${Date.now()}`;
-                const response = await fetch('/api/payment/create', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                    body: JSON.stringify({ amount: amount, orderId: orderId })
-                });
-                const data = await response.json();
-                if (data.payUrl) {
-                    window.location.href = data.payUrl; // Chuyển hướng sang Momo
-                } else {
-                    showNotification('Lỗi tạo thanh toán', true);
-                }
-            } catch (e) {
-                showNotification('Lỗi kết nối thanh toán', true);
             }
         }
 
@@ -568,7 +655,7 @@
                         <td>${bid.productName}</td>
                         <td>${formatVND(bid.amount)}</td>
                         <td>${new Date(bid.timestamp).toLocaleString('vi-VN')}</td>
-                        <td><span class="badge bg-${bid.status === 'won' ? 'success' : bid.status === 'lost' ? 'danger' : 'warning'}">${bid.status}</span></td>
+                        <td><span class="badge bg-${bid.status === 'WON' ? 'success' : bid.status === 'lost' ? 'danger' : 'warning'}">${bid.status}</span></td>
                     `;
                     tbody.appendChild(row);
                 });
@@ -656,11 +743,29 @@
             showNotification(`${data.userId} đã đặt giá ${formatVND(data.bidAmount)}`);
             loadAuctions();
         });
+        
+        // Socket: Thông báo thắng/thua thanh toán
+        socket.on('auctionWin', (data) => {
+            showNotification(data.message, false);
+            loadWonAuctions(); // Tải lại danh sách hàng đã thắng
+        });
+        
+        // Socket: Thông báo thanh toán thất bại
+        socket.on('paymentFail', (data) => {
+            showNotification(data.message, true);
+            loadWonAuctions(); // Tải lại để hiện trạng thái "Thanh toán thất bại"
+        });
+
+        // Socket: Balance Update
+        socket.on('balanceUpdate', (data) => {
+            document.getElementById('walletBalance').textContent = formatVND(data.balance);
+            showNotification(`💰 Số dư ví đã được cập nhật: ${formatVND(data.balance)}`);
+        });
 
         // Initialize
-        checkUserRole().then(valid => {
-            if (valid) {
-                loadUserData();
+        checkUserRole().then(userData => {
+            if (userData) {
+                loadUserData(userData);
                 loadAuctions();
                 loadBidHistory();
                 loadWonAuctions(); // Gọi hàm load hàng đã thắng

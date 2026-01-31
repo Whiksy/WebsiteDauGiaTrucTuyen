@@ -1,5 +1,9 @@
+// ⚠️ CẤU HÌNH ĐƯỜNG DẪN PUBLIC (NGROK) TẠI ĐÂY
+// Khi chạy lại ngrok, chỉ cần thay đổi dòng này là xong.
+const BASE_URL = "https://b6f1e5322cad.ngrok-free.app";
+
 module.exports = {
-  "PublicUrl": "https://9e0109500c52.ngrok-free.app", // ⚠️ Dán link Ngrok mới vào đây (VD: https://abcd-1234.ngrok-free.app)
+  "PublicUrl": BASE_URL,
   "ConnectionStrings": {
     "DefaultConnection": {
       "server": "localhost",
@@ -29,12 +33,12 @@ module.exports = {
     "CookieIsEssential": true
   },
   "Momo": {
-    "PartnerCode": "MOMO9FT020240115",
-    "AccessKey": "OwlqGx8A2OsOcKvS",
-    "SecretKey": "WWe36VM2oioPdUu1vS0IpW5Man0geQW8",
-    "Endpoint": "https://payment.momo.vn/v2/gateway/api/create",
-    "ReturnUrl": "https://049300cc46cf.ngrok-free.app/Booking/PaymentSuccess",
-    "NotifyUrl": "https://049300cc46cf.ngrok-free.app/api/momo/notify"
+    "PartnerCode": "MOMOBKUN20180529",
+    "AccessKey": "klm05TvNBzhg7h7j",
+    "SecretKey": "at67qH6mk8w5Y1nAyMoYKMWACiEi2bsa",
+    "Endpoint": "https://test-payment.momo.vn/v2/gateway/api/create",
+    "ReturnUrl": `${BASE_URL}/payment/success`,
+    "NotifyUrl": `${BASE_URL}/api/payment/ipn`
   },
   "Gmail": {
     "SmtpServer": "smtp.gmail.com",

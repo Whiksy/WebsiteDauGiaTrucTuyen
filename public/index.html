@@ -342,7 +342,10 @@
                                 <p class="card-text small text-muted">Người dẫn đầu: ${auction.topBidder || 'Chưa có'}</p>
                                 ${auction.status === 'active' 
                                     ? `<button class="btn bid-button w-100" onclick="openBidModal(${auction.id})">Đặt giá ngay</button>`
-                                    : `<button class="btn btn-secondary w-100" disabled>Đã kết thúc</button>`
+                                    : (auction.status === 'processing'
+                                        ? `<button class="btn btn-warning w-100" disabled><i class="fas fa-cog fa-spin"></i> Đang xử lý</button>`
+                                        : `<button class="btn btn-secondary w-100" disabled>Đã kết thúc</button>`
+                                    )
                                 }
                             </div>
                         </div>

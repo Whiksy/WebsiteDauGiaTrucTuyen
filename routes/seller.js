@@ -39,8 +39,8 @@ router.get('/products', verifyToken, async (req, res) => {
                 SELECT p.*, 
                 (SELECT TOP 1 ImageUrl FROM ProductImages WHERE ProductId = p.Id ORDER BY Id ASC) as Thumbnail,
                 (SELECT COUNT(*) FROM ProductImages WHERE ProductId = p.Id) as ImageCount,
-                CASE WHEN EXISTS (SELECT 1 FROM Auctions a WHERE a.ProductId = p.Id AND a.Status = 'Active' AND a.EndTime > GETDATE()) THEN 1 ELSE 0 END as IsAuctioned
-                FROM Products p WHERE SellerId = @sellerId ORDER BY Id DESC
+                CASE WHEN EXISTS (SELECT 1 FROM Auctions a WITH (NOLOCK) WHERE a.ProductId = p.Id AND a.Status = 'Active' AND a.EndTime > GETDATE()) THEN 1 ELSE 0 END as IsAuctioned
+                FROM Products p WITH (NOLOCK) WHERE SellerId = @sellerId ORDER BY Id DESC
             `);
         const products = result.recordset.map(p => ({
             ...p,
@@ -64,28 +64,36 @@ router.get('/auctions', verifyToken, async (req, res) => {
                 a.StartingBid as startingPrice, 
                 a.CurrentBid as currentBid, a.EndTime,
                        hb.Id as HighestBidderId, hb.Name as HighestBidderName, hb.Avatar as HighestBidderAvatar,
-                (SELECT COUNT(*) FROM Bids WHERE AuctionId = a.Id) as BidCount,
-                CASE WHEN a.EndTime > GETDATE() THEN 'active' ELSE 'ended' END as status 
-                FROM Auctions a
-                JOIN Products p ON a.ProductId = p.Id
-                LEFT JOIN Users hb ON a.HighestBidderId = hb.Id
+                (SELECT COUNT(*) FROM Bids WITH (NOLOCK) WHERE AuctionId = a.Id) as BidCount,
+                a.Status -- FIX: Lấy trạng thái thực từ DB thay vì tính toán theo thời gian
+                FROM Auctions a WITH (NOLOCK)
+                JOIN Products p WITH (NOLOCK) ON a.ProductId = p.Id
+                LEFT JOIN Users hb WITH (NOLOCK) ON a.HighestBidderId = hb.Id
                 WHERE p.SellerId = @sellerId
                 ORDER BY a.CreatedAt DESC
             `);
 
-        const auctions = result.recordset.map(a => ({
-            id: a.Id,
-            productName: a.productName,
-            image: a.productThumbnail,
-            startingPrice: Number(a.startingPrice),
-            currentBid: Number(a.currentBid || 0),
-            highestBidderId: a.HighestBidderId,
-            highestBidderName: a.HighestBidderName,
-            highestBidderAvatar: a.HighestBidderAvatar,
-            bidCount: a.BidCount,
-            endTime: a.EndTime,
-            status: a.status
-        }));
+        const auctions = result.recordset.map(a => {
+            let status = (a.Status || '').toLowerCase();
+            // Nếu thời gian đã hết nhưng trạng thái vẫn là Active -> Đang chờ xử lý (Cron Job)
+            if (status === 'active' && new Date(a.EndTime) <= new Date()) {
+                status = 'processing';
+            }
+            
+            return {
+                id: a.Id,
+                productName: a.productName,
+                image: a.productThumbnail,
+                startingPrice: Number(a.startingPrice),
+                currentBid: Number(a.currentBid || 0),
+                highestBidderId: a.HighestBidderId,
+                highestBidderName: a.HighestBidderName,
+                highestBidderAvatar: a.HighestBidderAvatar,
+                bidCount: a.BidCount,
+                endTime: a.EndTime,
+                status: status
+            };
+        });
         res.json(auctions);
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -103,10 +111,10 @@ router.get('/sold-items', verifyToken, async (req, res) => {
                        u.Id as BuyerId, u.Name as buyerName, u.Email as buyerEmail, u.Avatar as BuyerAvatar,
                        (SELECT TOP 1 ImageUrl FROM ProductImages WHERE ProductId = p.Id ORDER BY Id ASC) as thumbnail,
                        ISNULL(pay.Status, 'Pending') as paymentStatus
-                FROM Auctions a
-                JOIN Products p ON a.ProductId = p.Id
-                LEFT JOIN Users u ON a.HighestBidderId = u.Id
-                LEFT JOIN Payments pay ON pay.AuctionId = a.Id
+                FROM Auctions a WITH (NOLOCK)
+                JOIN Products p WITH (NOLOCK) ON a.ProductId = p.Id
+                LEFT JOIN Users u WITH (NOLOCK) ON a.HighestBidderId = u.Id
+                LEFT JOIN Payments pay WITH (NOLOCK) ON pay.AuctionId = a.Id
                 WHERE p.SellerId = @sellerId 
                   AND a.EndTime < GETDATE() 
                   AND a.HighestBidderId IS NOT NULL
@@ -133,25 +141,40 @@ router.post('/auctions/:id/end', verifyToken, async (req, res) => {
         const pool = await sql.connect();
         
         // Kiểm tra quyền sở hữu và trạng thái
+        // FIX: Cho phép tìm thấy phiên đấu giá ngay cả khi Status bị NULL (lỗi dữ liệu cũ)
+        // Chỉ cần đúng ID và đúng SellerId
         const check = await pool.request()
             .input('id', sql.Int, id)
             .input('userId', sql.Int, userId)
             .query(`
-                SELECT a.Id FROM Auctions a 
+                SELECT a.Id, a.Status FROM Auctions a 
                 JOIN Products p ON a.ProductId = p.Id 
-                WHERE a.Id = @id AND p.SellerId = @userId AND a.EndTime > GETDATE()
+                WHERE a.Id = @id AND p.SellerId = @userId
             `);
 
         if (check.recordset.length === 0) {
-            return res.status(403).json({ message: 'Không tìm thấy phiên đấu giá hoặc bạn không có quyền, hoặc phiên đã kết thúc.' });
+            return res.status(403).json({ message: 'Không tìm thấy phiên đấu giá hoặc bạn không có quyền.' });
         }
 
+        const auction = check.recordset[0];
+        
+        // FIX: Nếu đã kết thúc thành công, trả về 200 để Client refresh lại giao diện (Idempotent)
+        if (auction.Status === 'Ended') {
+            return res.json({ message: 'Phiên đấu giá đã kết thúc.' });
+        }
+        
+        // Lưu ý: Nếu Status là 'PaymentFailed', code sẽ chạy tiếp xuống dưới để reset về 'Active'
+        // Điều này hoạt động như tính năng "Thử lại thanh toán" (Retry Payment).
+
         // Cập nhật EndTime về hiện tại để kết thúc ngay lập tức
+        // QUAN TRỌNG: Force Status = 'Active' để đảm bảo Cron Job (server.js) quét thấy và xử lý thanh toán.
+        // (Trường hợp Status đang NULL, lệnh này sẽ sửa nó thành Active để Cron chạy được)
+        // FIX: Trừ 1 giây để đảm bảo EndTime < Hiện tại ngay lập tức (tránh lỗi so sánh mili-giây giữa Node và SQL)
         await pool.request()
             .input('id', sql.Int, id)
-            .query("UPDATE Auctions SET EndTime = GETDATE(), Status = 'Ended' WHERE Id = @id");
+            .query("UPDATE Auctions SET EndTime = DATEADD(second, -1, GETDATE()), Status = 'Active' WHERE Id = @id");
 
-        res.json({ message: 'Đã kết thúc phiên đấu giá thành công.' });
+        res.json({ message: 'Đã yêu cầu kết thúc. Hệ thống đang xử lý thanh toán...' });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

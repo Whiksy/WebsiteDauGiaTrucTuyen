@@ -18,6 +18,7 @@ CREATE TABLE Users (
     Avatar NVARCHAR(MAX),
     GoogleId NVARCHAR(256),
     FacebookId NVARCHAR(256),
+    Money DECIMAL(18, 2) DEFAULT 0,
     CreatedAt DATETIME2 DEFAULT GETDATE(),
     UpdatedAt DATETIME2 DEFAULT GETDATE()
 );
@@ -87,10 +88,11 @@ CREATE TABLE Bids (
 -- 7. Bảng Payments
 CREATE TABLE Payments (
     Id INT IDENTITY(1,1) PRIMARY KEY,
-    AuctionId INT NOT NULL,
+    AuctionId INT NULL, -- Nullable cho nạp tiền
     UserId INT NOT NULL,
     Amount DECIMAL(18,2) NOT NULL,
     Status NVARCHAR(50) DEFAULT 'Pending',
+    Type NVARCHAR(50) DEFAULT 'Auction', -- 'Auction' hoặc 'Deposit'
     MomoOrderId NVARCHAR(256),
     CreatedAt DATETIME2 DEFAULT GETDATE(),
     FOREIGN KEY (AuctionId) REFERENCES Auctions(Id),
