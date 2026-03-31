@@ -7,88 +7,19 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/seller.css">
     <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-            min-height: 100vh;
+        .product-card.out-of-stock {
+            opacity: 0.7;
         }
-        .navbar {
-            background: rgba(255,255,255,0.9);
-            backdrop-filter: blur(10px);
-        }
-        .card {
-            border: none;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-        .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 35px rgba(0,0,0,0.15);
-        }
-        .btn-primary {
-            background: linear-gradient(45deg, #4facfe, #00f2fe);
-            border: none;
-            border-radius: 25px;
-            padding: 10px 30px;
-            transition: all 0.3s ease;
-        }
-        .btn-primary:hover {
-            transform: scale(1.05);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-        }
-        .btn-success {
-            background: linear-gradient(45deg, #43e97b, #38f9d7);
-            border: none;
-            border-radius: 25px;
-            padding: 10px 30px;
-            transition: all 0.3s ease;
-        }
-        .btn-success:hover {
-            transform: scale(1.05);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-        }
-        .product-card {
-            background: white;
-            border-radius: 15px;
-            overflow: hidden;
-            margin-bottom: 20px;
-        }
-        .product-card img {
-            width: 100%;
-            height: 200px;
-            object-fit: cover;
-        }
-        .fade-in {
-            animation: fadeInUp 0.8s ease-out;
-        }
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        .modal-content {
-            border-radius: 15px;
-            border: none;
-        }
-        .form-control {
-            border-radius: 10px;
-            border: 1px solid #ddd;
-        }
-        .form-control:focus {
-            border-color: #4facfe;
-            box-shadow: 0 0 0 0.2rem rgba(79, 172, 254, 0.25);
-        }
-        .stats-card {
-            background: linear-gradient(45deg, #667eea, #764ba2);
-            color: white;
-            border-radius: 15px;
+        .out-of-stock-overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(255, 255, 255, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
     </style>
 </head>
@@ -110,7 +41,8 @@
                             <i class="fas fa-wallet"></i> <span id="walletBalance">0 ₫</span>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#depositModal"><i class="fas fa-plus-circle text-primary me-2"></i>Nạp tiền</a></li>
+                            <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#depositModal"><i class="fas fa-plus-circle text-success me-2"></i>Nạp tiền</a></li>
+                            <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#withdrawModal"><i class="fas fa-paper-plane text-info me-2"></i>Rút tiền</a></li>
                         </ul>
                     </li>
                     <!-- Dropdown User -->
@@ -173,6 +105,25 @@
                             <i class="fas fa-dollar-sign fa-2x mb-2"></i>
                             <h4 id="totalRevenue">0</h4>
                             <p class="mb-0">Tổng doanh thu</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row mt-2 mb-4">
+                <div class="col-md-6 mb-3">
+                    <div class="card border-success border-start border-5 shadow-sm">
+                        <div class="card-body">
+                            <p class="text-muted mb-1">Tổng tiền vào ví (Thu)</p>
+                            <h3 class="text-success mb-0" id="statIncome">0 ₫</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <div class="card border-danger border-start border-5 shadow-sm">
+                        <div class="card-body">
+                            <p class="text-muted mb-1">Tổng tiền ra ví (Chi)</p>
+                            <h3 class="text-danger mb-0" id="statExpense">0 ₫</h3>
                         </div>
                     </div>
                 </div>
@@ -265,6 +216,33 @@
         </div>
     </div>
 
+    <!-- Withdraw Modal -->
+    <div class="modal fade" id="withdrawModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Rút tiền về ví Momo</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="withdrawForm">
+                        <div class="mb-3">
+                            <label class="form-label">Số tiền muốn rút (VND)</label>
+                            <input type="number" class="form-control" id="withdrawAmount" min="10000" step="1000" placeholder="Ví dụ: 100000" required>
+                            <div class="form-text">Tối thiểu 10.000 VNĐ.</div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Số điện thoại ví Momo</label>
+                            <input type="tel" class="form-control" id="momoPhoneNumber" placeholder="Nhập SĐT nhận tiền" required>
+                            <div class="form-text">Tiền sẽ được chuyển trực tiếp vào SĐT Momo này.</div>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Xác nhận rút tiền</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Add Product Modal -->
     <div class="modal fade" id="addProductModal" tabindex="-1">
         <div class="modal-dialog">
@@ -278,6 +256,12 @@
                         <div class="mb-3">
                             <label for="productName" class="form-label">Tên sản phẩm</label>
                             <input type="text" class="form-control" id="productName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="productCategory" class="form-label">Danh mục</label>
+                            <select class="form-control" id="productCategory">
+                                <option value="">Chọn danh mục...</option>
+                            </select>
                         </div>
                         <div class="mb-3">
                             <label for="productDescription" class="form-label">Mô tả</label>
@@ -333,6 +317,12 @@
                                 <div class="mb-3">
                                     <label for="editProductName" class="form-label">Tên sản phẩm</label>
                                     <input type="text" class="form-control" id="editProductName" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="editProductCategory" class="form-label">Danh mục</label>
+                                    <select class="form-control" id="editProductCategory">
+                                        <option value="">Chọn danh mục...</option>
+                                    </select>
                                 </div>
                                 <div class="mb-3">
                                     <label for="editProductPrice" class="form-label">Giá (VND)</label>
@@ -435,6 +425,7 @@
                         </div>
                         <div class="col-md-6">
                             <h4 id="viewProductName"></h4>
+                            <span class="badge bg-secondary mb-3" id="viewProductCategory">Khác</span>
                             <p class="text-muted" id="viewProductDescription"></p>
                             <hr>
                             <p><strong>Giá:</strong> <span id="viewProductPrice" class="text-primary fw-bold"></span></p>
@@ -542,6 +533,16 @@
                             <input type="number" class="form-control" id="startingPrice" min="0" step="1000" required>
                         </div>
                         <div class="mb-3">
+                            <label class="form-label">Bước giá tối thiểu (VNĐ) <span class="text-muted">(Tùy chọn)</span></label>
+                            <input type="number" class="form-control" id="minBidIncrement" min="1000" step="1000" placeholder="VD: 50000">
+                            <small class="form-text text-primary"><i class="fas fa-info-circle"></i> Người sau phải trả cao hơn người trước tối thiểu số tiền này. Bỏ trống sẽ tự tính 5%.</small>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Giá mua đứt (VNĐ) <span class="text-muted">(Tùy chọn)</span></label>
+                            <input type="number" class="form-control" id="reservePrice" min="1000" step="1000" placeholder="VD: 5000000">
+                            <small class="form-text text-danger"><i class="fas fa-bolt"></i> Nếu người mua ra mức giá này, phiên đấu giá sẽ lập tức kết thúc.</small>
+                        </div>
+                        <div class="mb-3">
                             <label for="endTime" class="form-label">Thời gian kết thúc</label>
                             <input type="datetime-local" class="form-control" id="endTime" required>
                             <div class="form-text">Phiên đấu giá sẽ tự động kết thúc vào thời gian này.</div>
@@ -555,7 +556,7 @@
 
     <footer class="bg-dark text-white py-4 mt-5">
         <div class="container text-center">
-            <p>&copy; 2024 AuctionPro. Tất cả quyền được bảo lưu.</p>
+            <p>&copy; 2026 AuctionPro. Nguyễn Thái Duy.</p>
         </div>
     </footer>
 
@@ -563,882 +564,8 @@
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+    <script src="/js/ui-helpers.js"></script>
+    <script src="/js/seller.js"></script>
 
-    <script>
-        /**
-         * LOGGING SYSTEM FOR DEVELOPERS
-         */
-        const devLog = (context, data, isError = false) => {
-            const timestamp = new Date().toLocaleTimeString();
-            if (isError) {
-                console.error(`[${timestamp}] ❌ ERROR @ ${context}:`, data);
-            } else {
-                console.log(`[${timestamp}] ℹ️ INFO @ ${context}:`, data);
-            }
-        };
-
-        const socket = io();
-        let token = localStorage.getItem('token');
-        let currentSeller = null;
-        let currentViewingAuctionId = null;
-
-        // Socket Monitoring
-        socket.on('connect', () => devLog('Socket', `Connected with ID: ${socket.id}`));
-        socket.on('connect_error', (err) => devLog('Socket', err, true));
-
-        const formatVND = (num) => {
-            try { return Number(num).toLocaleString('vi-VN', { style: 'currency', currency: 'VND' }); }
-            catch (e) { 
-                devLog('FormatVND', e, true);
-                return num + ' VND'; 
-            }
-        };
-
-        const showNotification = (msg, isError = false) => {
-            Toastify({
-                text: msg,
-                duration: 3000,
-                gravity: "top",
-                position: "right",
-                backgroundColor: isError ? "#dc3545" : "#28a745",
-            }).showToast();
-        };
-
-        // Check authentication and role
-        if (!token) {
-            devLog('Auth', 'No token found in localStorage. Redirecting to login.');
-            window.location.href = '/';
-        }
-
-        async function checkSellerRole() {
-            devLog('Auth', 'Checking seller roles...');
-            try {
-                const response = await fetch('/api/auth/me', {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (response.ok) {
-                    const userData = await response.json();
-                    devLog('Auth', userData);
-                    const roles = userData.roles || [];
-                    if (!roles.includes('Seller')) {
-                        devLog('Auth', 'Access denied: User is not a Seller', true);
-                        showNotification('Bạn không có quyền truy cập trang này', true);
-                        setTimeout(() => window.location.href = '/', 2000);
-                        return null;
-                    }
-                    return userData;
-                } else {
-                    devLog('Auth', `Fetch failed with status: ${response.status}`, true);
-                    logout();
-                    return null;
-                }
-            } catch (e) {
-                devLog('Auth/checkSellerRole', e, true);
-                logout();
-                return null;
-            }
-        }
-
-        async function loadSellerData(userData) {
-            // Nếu đã có dữ liệu từ bước checkRole, dùng luôn không cần gọi API lại
-            if (userData) {
-                currentSeller = userData;
-                updateSellerUI();
-                return;
-            }
-
-            try {
-                const response = await fetch('/api/auth/me', {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (response.ok) {
-                    currentSeller = await response.json();
-                    updateSellerUI();
-                } else {
-                    devLog('API/loadSellerData', 'Failed to fetch user data', true);
-                    logout();
-                }
-            } catch (e) {
-                devLog('API/loadSellerData', e, true);
-                logout();
-            }
-        }
-
-        function updateSellerUI() {
-            document.getElementById('sellerName').textContent = currentSeller.name || 'Người bán';
-            
-            // Update Navbar Info
-            document.getElementById('navName').textContent = currentSeller.name || 'Seller';
-            if (currentSeller.avatar) {
-                document.getElementById('navAvatar').src = currentSeller.avatar;
-            }
-
-            // Load Wallet & Join Socket
-            loadWalletBalance();
-            socket.emit('joinUser', currentSeller.id);
-        }
-
-        // --- WALLET LOGIC ---
-        async function loadWalletBalance() {
-            try {
-                const response = await fetch('/api/user/balance', {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (response.ok) {
-                    const data = await response.json();
-                    document.getElementById('walletBalance').textContent = formatVND(data.balance);
-                }
-            } catch (e) { devLog('Wallet', e, true); }
-        }
-
-        document.getElementById('depositForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const amount = document.getElementById('depositAmount').value;
-            const btn = e.target.querySelector('button');
-            
-            if (!amount || amount < 1000) {
-                showNotification('Số tiền tối thiểu là 1.000đ', true);
-                return;
-            }
-
-            btn.disabled = true;
-            btn.textContent = 'Đang xử lý...';
-
-            try {
-                const response = await fetch('/api/payment/deposit', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                    body: JSON.stringify({ amount: Number(amount) })
-                });
-                const data = await response.json();
-                if (data.payUrl) {
-                    window.location.href = data.payUrl;
-                } else {
-                    showNotification(data.message || 'Lỗi tạo giao dịch', true);
-                    btn.disabled = false;
-                    btn.textContent = 'Tiếp tục thanh toán Momo';
-                }
-            } catch (e) {
-                showNotification('Lỗi kết nối', true);
-                btn.disabled = false;
-                btn.textContent = 'Tiếp tục thanh toán Momo';
-            }
-        });
-
-        async function loadProducts() {
-      devLog('API', 'Loading product list...');
-      try {
-          const response = await fetch('/api/seller/products', {
-              headers: { 'Authorization': `Bearer ${token}` }
-          });
-
-          // Kiểm tra nếu response không thành công (lỗi 500, 404, 401...)
-          if (!response.ok) {
-              const errorData = await response.json().catch(() => ({}));
-              throw new Error(errorData.message || `Server error: ${response.status}`);
-          }
-
-          const products = await response.json();
-          
-          // ĐẢM BẢO products là mảng để không bị lỗi .forEach
-          const productData = Array.isArray(products) ? products : [];
-          devLog('API/loadProducts', `Fetched ${productData.length} items`);
-
-          const container = document.getElementById('productList');
-          const select = document.getElementById('auctionProduct');
-          container.innerHTML = '';
-          select.innerHTML = '<option value="">Chọn sản phẩm...</option>';
-
-          productData.forEach(product => {
-              const col = document.createElement('div');
-              col.className = 'col-md-4 mb-4 fade-in';
-              const productName = product.Name || 'Sản phẩm';
-              const imgSrc = product.Thumbnail || '';
-              col.innerHTML = `
-                  <div class="card product-card h-100">
-                      <div class="position-relative" style="cursor: pointer;" onclick="viewProductDetails(${product.Id})">
-                          <img src="${imgSrc}" class="card-img-top" style="height: 200px; object-fit: cover;" alt="Product" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iMjAwIiB2aWV3Qm94PSIwIDAgMzAwIDIwMCI+PHJlY3QgZmlsbD0iI2VlZSIgd2lkdGg9IjMwMCIgaGVpZ2h0PSIyMDAiLz48dGV4dCB4PSI1MCUiIHk9IjUwJSIgZHk9Ii4zZW0iIGZpbGw9IiM1NTUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSJhcmlhbCIgZm9udC1zaXplPSIyNCI+Tm8gSW1hZ2U8L3RleHQ+PC9zdmc+'">
-                          <div class="position-absolute top-0 end-0 p-2">
-                              <span class="badge bg-dark opacity-75"><i class="fas fa-images"></i> ${product.ImageCount || 0}</span>
-                          </div>
-                      </div>
-                      <div class="card-body d-flex flex-column">
-                          <h5 class="card-title text-truncate" style="cursor: pointer;" onclick="viewProductDetails(${product.Id})">${product.Name}</h5>
-                          <p class="card-text text-truncate">${product.Description || 'Không có mô tả'}</p>
-                          <div class="mt-auto">
-                              <p class="card-text mb-1"><strong>Giá:</strong> ${formatVND(product.Price)}</p>
-                              <p class="card-text mb-3"><strong>Tồn kho:</strong> ${product.Stock}</p>
-                              <div class="d-flex justify-content-between gap-2">
-                                  <button class="btn btn-outline-info btn-sm flex-grow-1" onclick="viewProductDetails(${product.Id})"><i class="fas fa-eye"></i> Chi tiết</button>
-                                  <button class="btn btn-outline-primary btn-sm flex-grow-1" onclick="editProduct(${product.Id})"><i class="fas fa-edit"></i> Sửa</button>
-                                  <button class="btn btn-outline-danger btn-sm flex-grow-1" onclick="deleteProduct(${product.Id})"><i class="fas fa-trash"></i> Xóa</button>
-                              </div>
-                          </div>
-                      </div>
-                  </div>
-              `;
-              container.appendChild(col);
-
-              // Chỉ hiển thị sản phẩm chưa được đấu giá trong dropdown
-              if (!product.IsAuctioned) {
-                  const option = document.createElement('option');
-                  option.value = product.Id;
-                  option.textContent = product.Name;
-                  select.appendChild(option);
-              }
-          });
-
-          document.getElementById('totalProducts').textContent = productData.length;
-
-      } catch (e) {
-          devLog('API/loadProducts', e.message, true);
-          // Hiển thị thông báo lỗi lên giao diện nếu cần
-          document.getElementById('productList').innerHTML = `<p class="text-danger text-center">Lỗi: ${e.message}</p>`;
-      }
-  }
-  async function loadAuctions() {
-      devLog('API', 'Loading auctions...');
-      try {
-          // Thêm timestamp để tránh cache trình duyệt
-          const response = await fetch(`/api/seller/auctions?t=${Date.now()}`, {
-              headers: { 'Authorization': `Bearer ${token}` }
-          });
-
-          if (response.status === 401) {
-              showNotification('Phiên làm việc hết hạn', true);
-              setTimeout(logout, 2000);
-              return;
-          }
-          if (!response.ok) {
-              throw new Error(`Auth failed or Server error: ${response.status}`);
-          }
-
-          const auctions = await response.json();
-          const auctionData = Array.isArray(auctions) ? auctions : [];
-          devLog('API/loadAuctions', auctionData);
-
-          const tbody = document.getElementById('auctionTableBody');
-          tbody.innerHTML = '';
-
-          auctionData.forEach(auction => {
-            const status = (auction.status || '').toLowerCase();
-            const isActive = status === 'active';
-            const isProcessing = status === 'processing';
-            const hasBids = (auction.currentBid > auction.startingPrice) || (auction.bidCount > 0); // Logic đơn giản check bid
-            
-            let statusBadge = '';
-            if (isActive) statusBadge = '<span class="badge bg-success">Đang diễn ra</span>';
-            else if (isProcessing) statusBadge = '<span class="badge bg-warning text-dark">Đang xử lý</span>';
-            else statusBadge = '<span class="badge bg-secondary">Đã kết thúc</span>';
-
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td><img src="${auction.image || ''}" width="50" height="50" class="rounded object-fit-cover" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI1MCIgaGVpZ2h0PSI1MCI+PHJlY3Qgd2lkdGg9IjUwIiBoZWlnaHQ9IjUwIiBmaWxsPSIjY2NjIi8+PC9zdmc+'"></td>
-                <td>${auction.productName || 'N/A'}</td>
-                <td>${formatVND(auction.startingPrice)}</td>
-                <td>${formatVND(auction.currentBid)}</td>
-                <td>${new Date(auction.endTime).toLocaleString('vi-VN')}</td>
-                <td>${statusBadge}</td>
-                <td>
-                    <button class="btn btn-outline-info btn-sm" onclick="viewAuctionDetails(${auction.id})">Chi tiết</button>
-                    
-                    ${isActive
-                        ? `<button class="btn btn-outline-warning btn-sm" onclick="endAuction(${auction.id})" title="Kết thúc ngay"><i class="fas fa-stop-circle"></i></button>` 
-                        : (!hasBids ? `<button class="btn btn-outline-primary btn-sm" onclick="relistAuction(${auction.id})" title="Đăng lại"><i class="fas fa-redo"></i></button>` : '')
-                    }
-                    
-                    ${!hasBids && !isActive && !isProcessing
-                        ? `<button class="btn btn-outline-danger btn-sm" onclick="deleteAuction(${auction.id})" title="Xóa"><i class="fas fa-trash"></i></button>` 
-                        : ''
-                    }
-                </td>
-            `;
-            tbody.appendChild(row);
-        });
-          
-          const activeCount = auctionData.filter(a => (a.Status || a.status)?.toLowerCase() === 'active').length;
-          const completedCount = auctionData.filter(a => (a.Status || a.status)?.toLowerCase() === 'ended').length;
-          
-          document.getElementById('activeAuctions').textContent = activeCount;
-          document.getElementById('completedAuctions').textContent = completedCount;
-
-      } catch (e) {
-          devLog('API/loadAuctions', e.message, true);
-          const tbody = document.getElementById('auctionTableBody');
-          if(tbody) tbody.innerHTML = `<tr><td colspan="6" class="text-center text-danger">Không thể tải dữ liệu: ${e.message}</td></tr>`;
-      }
-  }
-
-  // BỔ SUNG: Hàm load hàng đã bán
-  async function loadSoldItems() {
-      try {
-          const response = await fetch('/api/seller/sold-items', {
-              headers: { 'Authorization': `Bearer ${token}` }
-          });
-          if (response.ok) {
-              const items = await response.json();
-              const tbody = document.getElementById('soldItemsTableBody');
-              tbody.innerHTML = '';
-              items.forEach(item => {
-                  tbody.innerHTML += `
-                    <tr>
-                        <td>
-                            <div class="d-flex align-items-center">
-                                <img src="${item.image || ''}" width="40" height="40" class="rounded me-2">
-                                <div>${item.productName}</div>
-                            </div>
-                        </td>
-                        <td>${formatVND(item.soldPrice)}</td>
-                        <td>
-                            <div class="d-flex align-items-center">
-                                <img src="${item.buyerAvatar || ''}" width="30" height="30" class="rounded-circle me-2" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMCIgaGVpZ2h0PSIzMCI+PHJlY3Qgd2lkdGg9IjMwIiBoZWlnaHQ9IjMwIiBmaWxsPSIjY2NjIi8+PC9zdmc+'">
-                                <div>
-                                    <div>${item.buyerName}</div>
-                                    <small class="text-muted">${item.buyerEmail}</small>
-                                </div>
-                            </div>
-                        </td>
-                        <td><span class="badge bg-${item.paymentStatus === 'Paid' ? 'success' : 'warning'}">${item.paymentStatus}</span></td>
-                    </tr>
-                  `;
-              });
-          }
-      } catch (e) { devLog('API/loadSoldItems', e, true); }
-  }
-
-  // BỔ SUNG: Các hàm xử lý hành động đấu giá
-  async function endAuction(id) {
-      if(!confirm('Kết thúc phiên đấu giá này ngay lập tức?')) return;
-      try {
-          const res = await fetch(`/api/seller/auctions/${id}/end`, {
-              method: 'POST',
-              headers: { 'Authorization': `Bearer ${token}` }
-          });
-          
-          const data = await res.json();
-          if(res.ok) { 
-              showNotification(data.message || 'Đã kết thúc phiên đấu giá'); 
-              loadAuctions(); // Tải lại để cập nhật trạng thái mới
-          } else { 
-              showNotification(data.message || 'Lỗi kết thúc', true);
-              // Vẫn tải lại danh sách để đồng bộ trạng thái nếu bị lệch
-              loadAuctions(); 
-          }
-      } catch(e) { 
-          console.error(e);
-          showNotification('Lỗi kết nối server', true); 
-      }
-  }
-
-  async function deleteAuction(id) {
-      if(!confirm('Xóa phiên đấu giá này? Hành động không thể hoàn tác.')) return;
-      try {
-          const res = await fetch(`/api/seller/auctions/${id}`, {
-              method: 'DELETE',
-              headers: { 'Authorization': `Bearer ${token}` }
-          });
-          if(res.ok) { showNotification('Đã xóa thành công'); loadAuctions(); }
-          else showNotification('Không thể xóa (có thể đã có người đặt giá)', true);
-      } catch(e) { showNotification('Lỗi server', true); }
-  }
-
-  async function relistAuction(id) {
-      const days = prompt("Nhập số ngày muốn gia hạn (VD: 3):", "3");
-      if(!days) return;
-      const endTime = new Date();
-      endTime.setDate(endTime.getDate() + parseInt(days));
-      
-      try {
-          const res = await fetch(`/api/seller/auctions/${id}/relist`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-              body: JSON.stringify({ endTime: endTime.toISOString() })
-          });
-          if(res.ok) { showNotification('Đã đăng lại thành công'); loadAuctions(); }
-          else showNotification('Lỗi đăng lại', true);
-      } catch(e) { showNotification('Lỗi server', true); }
-  }
-
-        // Hàm thêm ô nhập URL ảnh
-        function addUrlInput() {
-            const div = document.createElement('div');
-            div.className = 'input-group mb-2';
-            div.innerHTML = `
-                <input type="url" class="form-control" placeholder="https://example.com/image.jpg">
-                <button type="button" class="btn btn-outline-danger" onclick="this.parentElement.remove()"><i class="fas fa-times"></i></button>
-            `;
-            document.getElementById('urlInputsContainer').appendChild(div);
-        }
-
-        document.getElementById('addProductForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            devLog('Form', 'Submitting addProductForm');
-            
-            const formData = new FormData();
-            formData.append('name', document.getElementById('productName').value);
-            formData.append('description', document.getElementById('productDescription').value);
-            formData.append('price', document.getElementById('productPrice').value);
-            formData.append('stock', document.getElementById('productStock').value);
-
-            const files = document.getElementById('addProductImages').files;
-            for(let i = 0; i < files.length; i++) {
-                formData.append('productImages', files[i]);
-            }
-
-            // Lấy danh sách URL ảnh từ tab Link Online
-            const urlInputs = document.querySelectorAll('#urlInputsContainer input');
-            urlInputs.forEach(input => {
-                if (input.value && input.value.trim() !== '') {
-                    formData.append('imageUrls', input.value.trim());
-                }
-            });
-
-            try {
-                const response = await fetch('/api/products', {
-                    method: 'POST',
-                    headers: {
-                        // Không set Content-Type để browser tự set multipart/form-data
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: formData
-                });
-                const data = await response.json();
-                if (response.ok) {
-                    showNotification('Thêm sản phẩm thành công');
-                    bootstrap.Modal.getInstance(document.getElementById('addProductModal')).hide();
-                    loadProducts();
-                    e.target.reset();
-                    // Reset container URL
-                    document.getElementById('urlInputsContainer').innerHTML = '';
-                } else {
-                    devLog('API/POST-Product', data, true);
-                    showNotification(data.message || 'Thêm sản phẩm thất bại', true);
-                }
-            } catch (e) {
-                devLog('API/POST-Product', e, true);
-                showNotification('Lỗi kết nối server', true);
-            }
-        });
-
-        document.getElementById('createAuctionForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            devLog('Form', 'Submitting createAuctionForm');
-            const productId = Number(document.getElementById('auctionProduct').value);
-            const startingPrice = Number(document.getElementById('startingPrice').value);
-            const endTime = document.getElementById('endTime').value;
-
-            if (new Date(endTime) <= new Date()) {
-                showNotification('Thời gian kết thúc phải lớn hơn thời gian hiện tại', true);
-                return;
-            }
-
-            try {
-                const response = await fetch('/api/auction', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({ productId, startingPrice, endTime })
-                });
-                const data = await response.json();
-                if (response.ok) {
-                    showNotification('Tạo đấu giá thành công');
-                    bootstrap.Modal.getInstance(document.getElementById('createAuctionModal')).hide();
-                    loadAuctions();
-                    e.target.reset();
-                } else {
-                    devLog('API/POST-Auction', data, true);
-                    showNotification(data.message || 'Tạo đấu giá thất bại', true);
-                }
-            } catch (e) {
-                devLog('API/POST-Auction', e, true);
-                showNotification('Lỗi tạo đấu giá', true);
-            }
-        });
-
-        async function editProduct(id) {
-            try {
-                const response = await fetch(`/api/products/${id}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (!response.ok) throw new Error('Không thể tải thông tin sản phẩm');
-                
-                const product = await response.json();
-                
-                document.getElementById('editProductId').value = product.Id;
-                document.getElementById('editProductName').value = product.Name;
-                document.getElementById('editProductDescription').value = product.Description;
-                document.getElementById('editProductPrice').value = product.Price;
-                document.getElementById('editProductStock').value = product.Stock;
-
-                // Hiển thị ảnh cũ
-                const imgContainer = document.getElementById('editCurrentImages');
-                imgContainer.innerHTML = '';
-                if (product.images && product.images.length > 0) {
-                    product.images.forEach(url => {
-                        const div = document.createElement('div');
-                        div.className = 'position-relative d-inline-block';
-                        div.innerHTML = `
-                            <img src="${url}" class="edit-preview-img" style="width: 80px; height: 80px; object-fit: cover; border-radius: 5px;">
-                            <button type="button" class="btn-close position-absolute top-0 end-0 bg-white p-1" 
-                                    style="font-size: 0.5rem;" onclick="this.parentElement.remove()"></button>
-                        `;
-                        imgContainer.appendChild(div);
-                    });
-                } else {
-                    imgContainer.innerHTML = '<span class="text-muted small">Chưa có ảnh</span>';
-                }
-
-                new bootstrap.Modal(document.getElementById('editProductModal')).show();
-            } catch (e) {
-                showNotification(e.message, true);
-            }
-        }
-
-        document.getElementById('editProductForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const id = document.getElementById('editProductId').value;
-            const formData = new FormData();
-            
-            formData.append('name', document.getElementById('editProductName').value);
-            formData.append('description', document.getElementById('editProductDescription').value);
-            formData.append('price', document.getElementById('editProductPrice').value);
-            formData.append('stock', document.getElementById('editProductStock').value);
-
-            // Lấy danh sách ảnh cũ còn giữ lại
-            const currentImages = document.querySelectorAll('#editCurrentImages img.edit-preview-img');
-            currentImages.forEach(img => {
-                formData.append('keepImages', img.getAttribute('src'));
-            });
-            // Nếu xóa hết ảnh cũ, gửi một chuỗi rỗng để backend biết
-            if (currentImages.length === 0) {
-                formData.append('keepImages', ""); 
-            }
-
-            // Ảnh mới
-            const files = document.getElementById('editProductImages').files;
-            for(let i = 0; i < files.length; i++) {
-                formData.append('productImages', files[i]);
-            }
-
-            try {
-                const response = await fetch(`/api/products/${id}`, {
-                    method: 'PUT',
-                    headers: { 'Authorization': `Bearer ${token}` },
-                    body: formData
-                });
-                
-                if (response.ok) {
-                    showNotification('Cập nhật sản phẩm thành công');
-                    bootstrap.Modal.getInstance(document.getElementById('editProductModal')).hide();
-                    loadProducts();
-                } else {
-                    const data = await response.json();
-                    showNotification(data.message || 'Cập nhật thất bại', true);
-                }
-            } catch (e) {
-                showNotification('Lỗi kết nối server', true);
-            }
-        });
-
-        // --- PROFILE MANAGEMENT ---
-        const editProfileModal = document.getElementById('editProfileModal');
-        if (editProfileModal) {
-            editProfileModal.addEventListener('show.bs.modal', () => {
-                if (currentSeller) {
-                    document.getElementById('editProfileName').value = currentSeller.name || '';
-                    document.getElementById('editProfileEmail').value = currentSeller.email || '';
-                    document.getElementById('editProfilePassword').value = '';
-                    document.getElementById('editProfileConfirmPassword').value = '';
-                    document.getElementById('editProfileAvatar').value = '';
-                    if (currentSeller.avatar) {
-                        document.getElementById('editProfilePreview').src = currentSeller.avatar;
-                    }
-                }
-            });
-        }
-
-        document.getElementById('editProfileAvatar').addEventListener('change', function(e) {
-            if (this.files && this.files[0]) {
-                document.getElementById('editProfilePreview').src = URL.createObjectURL(this.files[0]);
-            }
-        });
-
-        document.getElementById('editProfileForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const formData = new FormData();
-            formData.append('name', document.getElementById('editProfileName').value);
-            
-            const password = document.getElementById('editProfilePassword').value;
-            const confirmPassword = document.getElementById('editProfileConfirmPassword').value;
-
-            if (password) {
-                if (password !== confirmPassword) {
-                    showNotification('Mật khẩu xác nhận không khớp', true);
-                    return;
-                }
-                formData.append('password', password);
-            }
-            
-            const avatarFile = document.getElementById('editProfileAvatar').files[0];
-            if (avatarFile) formData.append('avatar', avatarFile);
-
-            try {
-                const res = await fetch('/api/seller/profile', {
-                    method: 'PUT',
-                    headers: { 'Authorization': `Bearer ${token}` },
-                    body: formData
-                });
-                const data = await res.json();
-                if (res.ok) {
-                    showNotification('Cập nhật hồ sơ thành công');
-                    bootstrap.Modal.getInstance(editProfileModal).hide();
-                    loadSellerData(); // Reload data to update navbar
-                } else {
-                    showNotification(data.message || 'Lỗi cập nhật', true);
-                }
-            } catch (err) {
-                showNotification('Lỗi kết nối', true);
-            }
-        });
-
-        async function deleteProduct(id) {
-            if (!confirm('Bạn có chắc muốn xóa sản phẩm này?')) return;
-            devLog('API', `Deleting product ID: ${id}`);
-            try {
-                const response = await fetch(`/api/products/${id}`, {
-                    method: 'DELETE',
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                const data = await response.json();
-                if (response.ok) {
-                    showNotification('Xóa sản phẩm thành công');
-                    loadProducts();
-                } else {
-                    devLog('API/DELETE-Product', data, true);
-                    showNotification(data.message || 'Xóa sản phẩm thất bại', true);
-                }
-            } catch (e) {
-                devLog('API/DELETE-Product', e, true);
-                showNotification('Lỗi xóa sản phẩm', true);
-            }
-        }
-
-        async function viewProductDetails(id) {
-            try {
-                const response = await fetch(`/api/products/${id}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (!response.ok) throw new Error('Không thể tải thông tin sản phẩm');
-                
-                const product = await response.json();
-                
-                document.getElementById('viewProductName').textContent = product.Name;
-                document.getElementById('viewProductDescription').textContent = product.Description || 'Không có mô tả';
-                document.getElementById('viewProductPrice').textContent = formatVND(product.Price);
-                document.getElementById('viewProductStock').textContent = product.Stock;
-                document.getElementById('viewProductCreated').textContent = new Date(product.CreatedAt).toLocaleString('vi-VN');
-                
-                // Setup Edit button
-                document.getElementById('btnEditFromDetail').onclick = () => {
-                    bootstrap.Modal.getInstance(document.getElementById('productDetailModal')).hide();
-                    editProduct(product.Id);
-                };
-
-                // Images Carousel
-                const carouselInner = document.getElementById('productCarouselInner');
-                const listImg = document.getElementById('productDetailImagesList');
-                carouselInner.innerHTML = '';
-                listImg.innerHTML = '';
-
-                if (product.images && product.images.length > 0) {
-                    product.images.forEach((url, index) => {
-                        // Slide
-                        const slide = document.createElement('div');
-                        slide.className = `carousel-item ${index === 0 ? 'active' : ''}`;
-                        slide.innerHTML = `<img src="${url}" class="d-block w-100 rounded" style="height: 300px; object-fit: cover;" alt="Slide ${index}">`;
-                        carouselInner.appendChild(slide);
-
-                        // Thumbnail
-                        const img = document.createElement('img');
-                        img.src = url;
-                        img.style.width = '60px';
-                        img.style.height = '60px';
-                        img.style.objectFit = 'cover';
-                        img.className = 'rounded border cursor-pointer opacity-75 hover-opacity-100';
-                        img.onclick = () => new bootstrap.Carousel(document.getElementById('productCarousel')).to(index);
-                        listImg.appendChild(img);
-                    });
-                } else {
-                    carouselInner.innerHTML = `<div class="carousel-item active"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0iI2VlZSIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjNTU1Ij5ObyBJbWFnZTwvdGV4dD48L3N2Zz4=" class="d-block w-100 rounded"></div>`;
-                }
-
-                new bootstrap.Modal(document.getElementById('productDetailModal')).show();
-            } catch (e) {
-                showNotification(e.message, true);
-            }
-        }
-
-        async function viewAuctionDetails(id) {
-            currentViewingAuctionId = id;
-            try {
-                // 1. Lấy thông tin chi tiết
-                const resDetail = await fetch(`/api/auction/${id}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                const auction = await resDetail.json();
-
-                // 2. Lấy lịch sử đấu giá
-                const resBids = await fetch(`/api/auction/${id}/bids`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                const bids = await resBids.json();
-
-                // 3. Điền dữ liệu vào Modal
-                document.getElementById('detailProductName').textContent = auction.productName;
-                document.getElementById('detailDescription').textContent = auction.description || 'Không có mô tả';
-                document.getElementById('detailStartingPrice').textContent = formatVND(auction.startingPrice);
-                document.getElementById('detailCurrentPrice').textContent = formatVND(auction.currentBid);
-                document.getElementById('detailHighestBidder').textContent = auction.highestBidderName || 'Chưa có';
-                document.getElementById('detailEndTime').textContent = new Date(auction.endTime).toLocaleString('vi-VN');
-                
-                const statusBadge = auction.status === 'Active' 
-                    ? '<span class="badge bg-success">Đang diễn ra</span>' 
-                    : '<span class="badge bg-secondary">Đã kết thúc</span>';
-                document.getElementById('detailStatus').innerHTML = statusBadge;
-
-                // Ảnh
-                const carouselInner = document.getElementById('carouselInner');
-                const listImg = document.getElementById('detailImagesList');
-                carouselInner.innerHTML = '';
-                listImg.innerHTML = '';
-                
-                if (auction.images && auction.images.length > 0) {
-                    auction.images.forEach((url, index) => {
-                        // Add to Carousel
-                        const slide = document.createElement('div');
-                        slide.className = `carousel-item ${index === 0 ? 'active' : ''}`;
-                        slide.innerHTML = `<img src="${url}" class="d-block w-100 rounded" style="height: 300px; object-fit: cover;" alt="Slide ${index}">`;
-                        carouselInner.appendChild(slide);
-
-                        // Add to Thumbnails list
-                        const img = document.createElement('img');
-                        img.src = url;
-                        img.style.width = '60px';
-                        img.style.height = '60px';
-                        img.style.objectFit = 'cover';
-                        img.className = 'rounded border cursor-pointer opacity-75 hover-opacity-100';
-                        // Click thumbnail to switch slide
-                        img.onclick = () => new bootstrap.Carousel(document.getElementById('auctionCarousel')).to(index);
-                        listImg.appendChild(img);
-                    });
-                } else {
-                    carouselInner.innerHTML = `<div class="carousel-item active"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0iI2VlZSIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjNTU1Ij5ObyBJbWFnZTwvdGV4dD48L3N2Zz4=" class="d-block w-100 rounded"></div>`;
-                }
-
-                // Lịch sử bid
-                const bidBody = document.getElementById('detailBidHistory');
-                bidBody.innerHTML = '';
-                if (bids.length === 0) {
-                    bidBody.innerHTML = '<tr><td colspan="3" class="text-center">Chưa có lượt đặt giá nào</td></tr>';
-                } else {
-                    bids.forEach(bid => {
-                        bidBody.innerHTML += `
-                            <tr>
-                                <td>${bid.bidderName}</td>
-                                <td>${bid.formattedAmount}</td>
-                                <td>${new Date(bid.time).toLocaleString('vi-VN')}</td>
-                            </tr>
-                        `;
-                    });
-                }
-
-                new bootstrap.Modal(document.getElementById('auctionDetailModal')).show();
-            } catch (e) {
-                console.error(e);
-                showNotification('Lỗi tải chi tiết đấu giá', true);
-            }
-        }
-
-        // Socket: Thông báo sản phẩm đã bán
-        socket.on('productSold', (data) => {
-            showNotification(data.message);
-            loadAuctions();    // Cập nhật danh sách đấu giá (chuyển sang Ended)
-            loadSoldItems();   // Cập nhật danh sách hàng đã bán
-            loadWalletBalance(); // Cập nhật số dư ví
-        });
-
-        // Socket events: Lắng nghe sự kiện đặt giá mới
-        socket.on('bidUpdate', async (data) => {
-            // 1. Cập nhật danh sách đấu giá bên ngoài (Table)
-            loadAuctions();
-
-            // 2. Nếu đang mở modal chi tiết của đúng phiên đấu giá đó -> Cập nhật nội dung modal
-            if (currentViewingAuctionId && Number(currentViewingAuctionId) === Number(data.auctionId)) {
-                try {
-                    // Cập nhật giá hiện tại
-                    const priceEl = document.getElementById('detailCurrentPrice');
-                    if (priceEl) priceEl.textContent = formatVND(data.bidAmount);
-
-                    // Tải lại lịch sử đấu giá
-                    const resBids = await fetch(`/api/auction/${data.auctionId}/bids`, {
-                        headers: { 'Authorization': `Bearer ${token}` }
-                    });
-                    const bids = await resBids.json();
-
-                    const bidBody = document.getElementById('detailBidHistory');
-                    if (bidBody) {
-                        bidBody.innerHTML = '';
-                        if (bids.length === 0) {
-                            bidBody.innerHTML = '<tr><td colspan="3" class="text-center">Chưa có lượt đặt giá nào</td></tr>';
-                        } else {
-                            bids.forEach(bid => {
-                                bidBody.innerHTML += `
-                                    <tr>
-                                        <td>${bid.bidderName}</td>
-                                        <td>${bid.formattedAmount}</td>
-                                        <td>${new Date(bid.time).toLocaleString('vi-VN')}</td>
-                                    </tr>
-                                `;
-                            });
-                        }
-                    }
-                } catch (e) {
-                    console.error('Socket update error', e);
-                }
-            }
-        });
-
-        // Socket: Balance Update
-        socket.on('balanceUpdate', (data) => {
-            document.getElementById('walletBalance').textContent = formatVND(data.balance);
-            showNotification(`💰 Số dư ví đã được cập nhật: ${formatVND(data.balance)}`);
-        });
-
-        // Reset ID khi đóng modal để tránh update sai
-        document.getElementById('auctionDetailModal').addEventListener('hidden.bs.modal', () => {
-            currentViewingAuctionId = null;
-        });
-
-        function logout() {
-            devLog('Auth', 'Logging out...');
-            localStorage.removeItem('token');
-            window.location.href = '/';
-        }
-
-        // Initialize App
-        (async () => {
-            devLog('System', 'Initializing Seller Dashboard...');
-            const userData = await checkSellerRole();
-            if (userData) {
-                await loadSellerData(userData);
-                await loadProducts();
-                await loadAuctions();
-                await loadSoldItems(); // Load thêm hàng đã bán
-                devLog('System', 'Initialization complete.');
-            }
-        })();
-    </script>
 </body>
 </html>

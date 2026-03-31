@@ -11,99 +11,7 @@
     <!-- Toastify CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
     <!-- Custom CSS -->
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
-            min-height: 100vh;
-        }
-        .sidebar {
-            background: linear-gradient(45deg, #667eea, #764ba2);
-            color: white;
-            min-height: 100vh;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 250px;
-            padding-top: 60px;
-            z-index: 1000;
-        }
-        .sidebar .nav-link {
-            color: rgba(255,255,255,0.8);
-            padding: 15px 20px;
-            transition: all 0.3s ease;
-        }
-        .sidebar .nav-link:hover {
-            color: white;
-            background: rgba(255,255,255,0.1);
-            border-radius: 5px;
-        }
-        .sidebar .nav-link.active {
-            color: white;
-            background: rgba(255,255,255,0.2);
-            border-radius: 5px;
-        }
-        .main-content {
-            margin-left: 250px;
-            padding: 20px;
-        }
-        .card {
-            border: none;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-        .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 35px rgba(0,0,0,0.15);
-        }
-        .btn-primary {
-            background: linear-gradient(45deg, #ff9a9e, #fecfef);
-            border: none;
-            border-radius: 25px;
-            padding: 10px 30px;
-            transition: all 0.3s ease;
-        }
-        .btn-primary:hover {
-            transform: scale(1.05);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-        }
-        .stats-card {
-            background: linear-gradient(45deg, #667eea, #764ba2);
-            color: white;
-            border-radius: 15px;
-        }
-        .fade-in {
-            animation: fadeInUp 0.8s ease-out;
-        }
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        .modal-content {
-            border-radius: 15px;
-            border: none;
-        }
-        .form-control {
-            border-radius: 10px;
-            border: 1px solid #ddd;
-        }
-        .form-control:focus {
-            border-color: #ff9a9e;
-            box-shadow: 0 0 0 0.2rem rgba(255, 154, 158, 0.25);
-        }
-        .table th {
-            background: linear-gradient(45deg, #667eea, #764ba2);
-            color: white;
-            border: none;
-        }
-    </style>
+    <link rel="stylesheet" href="/css/admin.css">
 </head>
 <body>
     <!-- Sidebar -->
@@ -116,14 +24,26 @@
             <a class="nav-link" href="#users" onclick="showSection('users')">
                 <i class="fas fa-users"></i> Quản lý người dùng
             </a>
+            <a class="nav-link" href="#withdrawals" onclick="showSection('withdrawals')">
+                <i class="fas fa-money-bill-wave"></i> Duyệt Rút Tiền
+            </a>
             <a class="nav-link" href="#products" onclick="showSection('products')">
                 <i class="fas fa-box"></i> Quản lý sản phẩm
+            </a>
+            <a class="nav-link" href="#" onclick="showSection('categories')">
+                <i class="fas fa-tags me-2"></i> Quản lý danh mục
             </a>
             <a class="nav-link" href="#auctions" onclick="showSection('auctions')">
                 <i class="fas fa-gavel"></i> Quản lý đấu giá
             </a>
+            <a class="nav-link" href="#requests" onclick="showSection('requests')">
+                <i class="fas fa-user-check"></i> Yêu cầu trở thành Seller
+            </a>
             <a class="nav-link" href="#reports" onclick="showSection('reports')">
                 <i class="fas fa-chart-bar"></i> Báo cáo
+            </a>
+            <a class="nav-link" href="#profile" onclick="showSection('profile')">
+                <i class="fas fa-user-circle"></i> Hồ sơ của tôi
             </a>
             <hr class="my-3">
             <a class="nav-link" href="/" onclick="logout()">
@@ -203,14 +123,53 @@
             </div>
         </div>
 
+    <!-- Phê Duyệt Rút Tiền -->
+    <div id="withdrawals-section" class="section d-none fade-in">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="h3 mb-0 text-gray-800"><i class="fas fa-money-bill-wave text-primary"></i> Duyệt Rút Tiền</h2>
+            <div class="input-group" style="max-width: 300px;">
+                <input type="text" id="searchWithdrawalInput" class="form-control" placeholder="Tìm theo tên, email, SĐT...">
+            </div>
+        </div>
+        <div class="card shadow-sm border-0">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Mã Giao Dịch</th>
+                                <th>Người Yêu Cầu</th>
+                                <th>Số Tiền</th>
+                                <th>SĐT MoMo Nhận</th>
+                                <th>Ngày Yêu Cầu</th>
+                                <th>Hành Động</th>
+                            </tr>
+                        </thead>
+                        <tbody id="withdrawalsTableBody">
+                            <!-- JS sẽ đổ dữ liệu vào đây -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
         <!-- Users Section -->
         <div id="users-section" class="section d-none">
-            <h1 class="mb-4 fade-in">Quản lý người dùng</h1>
+            <div class="d-flex justify-content-between align-items-center mb-4 fade-in">
+                <h1 class="h3 mb-0 text-gray-800">Quản lý người dùng</h1>
+            </div>
             <div class="card">
-                <div class="card-body">
+                <div class="card-header bg-white py-3">
+                    <div class="input-group" style="max-width: 300px;">
+                        <span class="input-group-text"><i class="fas fa-search"></i></span>
+                        <input type="text" id="searchUserInput" class="form-control" placeholder="Tìm tên, email...">
+                    </div>
+                </div>
+                <div class="card-body p-0">
                     <div class="table-responsive">
-                        <table class="table table-hover" id="usersTable">
-                            <thead>
+                        <table class="table table-hover align-middle mb-0" id="usersTable">
+                            <thead class="table-light">
                                 <tr>
                                     <th>ID</th>
                                     <th>Tên</th>
@@ -231,12 +190,20 @@
 
         <!-- Products Section -->
         <div id="products-section" class="section d-none">
-            <h1 class="mb-4 fade-in">Quản lý sản phẩm</h1>
+            <div class="d-flex justify-content-between align-items-center mb-4 fade-in">
+                <h1 class="h3 mb-0 text-gray-800">Quản lý sản phẩm</h1>
+            </div>
             <div class="card">
-                <div class="card-body">
+                <div class="card-header bg-white py-3">
+                    <div class="input-group" style="max-width: 300px;">
+                        <span class="input-group-text"><i class="fas fa-search"></i></span>
+                        <input type="text" id="searchProductInput" class="form-control" placeholder="Tìm tên sản phẩm...">
+                    </div>
+                </div>
+                <div class="card-body p-0">
                     <div class="table-responsive">
-                        <table class="table table-hover" id="productsTable">
-                            <thead>
+                        <table class="table table-hover align-middle mb-0" id="productsTable">
+                            <thead class="table-light">
                                 <tr>
                                     <th>ID</th>
                                     <th>Tên</th>
@@ -255,18 +222,60 @@
             </div>
         </div>
 
-        <!-- Auctions Section -->
-        <div id="auctions-section" class="section d-none">
-            <h1 class="mb-4 fade-in">Quản lý đấu giá</h1>
+        <!-- Categories Section -->
+        <div id="categories-section" class="section d-none">
+            <div class="d-flex justify-content-between align-items-center mb-4 fade-in">
+                <h1 class="h3 mb-0 text-gray-800">Quản lý danh mục</h1>
+                <button class="btn btn-primary" onclick="openCategoryModal()">
+                    <i class="fas fa-plus"></i> Thêm danh mục
+                </button>
+            </div>
             <div class="card">
+                <div class="card-header bg-white py-3">
+                    <div class="input-group" style="max-width: 300px;">
+                        <span class="input-group-text"><i class="fas fa-search"></i></span>
+                        <input type="text" id="searchCategoryInput" class="form-control" placeholder="Tìm tên danh mục...">
+                    </div>
+                </div>
                 <div class="card-body">
                     <div class="table-responsive">
-                        <table class="table table-hover" id="auctionsTable">
+                        <table class="table table-hover" id="categoriesTable">
                             <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Tên danh mục</th>
+                                    <th>Mô tả</th>
+                                    <th>Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="categoriesTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Auctions Section -->
+        <div id="auctions-section" class="section d-none">
+            <div class="d-flex justify-content-between align-items-center mb-4 fade-in">
+                <h1 class="h3 mb-0 text-gray-800">Quản lý đấu giá</h1>
+            </div>
+            <div class="card">
+                <div class="card-header bg-white py-3">
+                    <div class="input-group" style="max-width: 300px;">
+                        <span class="input-group-text"><i class="fas fa-search"></i></span>
+                        <input type="text" id="searchAuctionInput" class="form-control" placeholder="Tìm theo tên sản phẩm...">
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0" id="auctionsTable">
+                            <thead class="table-light">
                                 <tr>
                                     <th>ID</th>
                                     <th>Sản phẩm</th>
                                     <th>Giá hiện tại</th>
+                                    <th>Lượt đặt</th>
                                     <th>Thời gian kết thúc</th>
                                     <th>Trạng thái</th>
                                     <th>Thao tác</th>
@@ -274,6 +283,36 @@
                             </thead>
                             <tbody id="auctionsTableBody">
                                 <!-- Auctions will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Seller Requests Section -->
+        <div id="requests-section" class="section d-none">
+            <div class="d-flex justify-content-between align-items-center mb-4 fade-in">
+                <h1 class="h3 mb-0 text-gray-800">Yêu cầu nâng cấp Seller</h1>
+            </div>
+            <div class="card">
+                <div class="card-header bg-white py-3">
+                    <input type="text" id="searchRequestInput" class="form-control" placeholder="Tìm theo tên, email..." style="max-width: 300px;">
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="requestsTable">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Người dùng</th>
+                                    <th>Email</th>
+                                    <th>Ngày tham gia</th>
+                                    <th>Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="requestsTableBody">
+                                <!-- Requests will be loaded here -->
                             </tbody>
                         </table>
                     </div>
@@ -302,6 +341,32 @@
                         </div>
                         <div class="card-body">
                             <canvas id="auctionStatusChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Profile Section -->
+        <div id="profile-section" class="section d-none fade-in">
+            <h1 class="mb-4">Hồ sơ cá nhân</h1>
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="card shadow-sm border-0">
+                        <div class="card-body p-4">
+                            <div class="text-center mb-4">
+                                <img id="profileAvatar" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNTAiIGhlaWdodD0iMTUwIj48cmVjdCB3aWR0aD0iMTUwIiBoZWlnaHQ9IjE1MCIgZmlsbD0iI2VlZSIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjNTU1Ij5BdmF0YXI8L3RleHQ+PC9zdmc+" class="rounded-circle shadow" style="width: 120px; height: 120px; object-fit: cover;">
+                            </div>
+                            <table class="table table-borderless">
+                                <tbody>
+                                    <tr><th style="width: 150px;" class="text-muted">Họ tên:</th><td id="userFullName" class="fw-bold"></td></tr>
+                                    <tr><th class="text-muted">Email:</th><td id="userEmail"></td></tr>
+                                </tbody>
+                            </table>
+                            <div class="text-end mt-3">
+                                <button class="btn btn-outline-primary me-2" data-bs-toggle="modal" data-bs-target="#editProfileModal"><i class="fas fa-edit"></i> Chỉnh sửa</button>
+                                <button class="btn btn-outline-warning" data-bs-toggle="modal" data-bs-target="#changePasswordModal"><i class="fas fa-key"></i> Đổi mật khẩu</button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -418,410 +483,96 @@
         </div>
     </div>
 
+    <!-- Category Modal -->
+    <div class="modal fade" id="categoryModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="categoryModalTitle">Thêm danh mục</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="categoryForm">
+                        <input type="hidden" id="categoryId">
+                        <div class="mb-3">
+                            <label class="form-label">Tên danh mục</label>
+                            <input type="text" class="form-control" id="categoryName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Mô tả chi tiết</label>
+                            <textarea class="form-control" id="categoryDescription" rows="3"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-success w-100">Lưu danh mục</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Profile Modal (Dành riêng cho Admin) -->
+    <div class="modal fade" id="editProfileModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-light">
+                    <h5 class="modal-title"><i class="fas fa-user-edit text-primary me-2"></i> Cập nhật hồ sơ</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editProfileForm">
+                        <div class="text-center mb-4">
+                            <img id="editProfilePreview" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2VlZSIvPjwvc3ZnPg==" class="rounded-circle border" width="100" height="100" style="object-fit: cover;">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-muted small fw-bold">Họ và tên</label>
+                            <input type="text" class="form-control" id="editProfileName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-muted small fw-bold">Ảnh đại diện</label>
+                            <input type="file" class="form-control" id="editProfileAvatar" accept="image/*">
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Lưu thay đổi</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Change Password Modal -->
+    <div class="modal fade" id="changePasswordModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-light">
+                    <h5 class="modal-title"><i class="fas fa-lock text-warning me-2"></i> Đổi mật khẩu</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="changePasswordForm">
+                        <div class="mb-3">
+                            <label class="form-label text-muted small fw-bold">Mật khẩu hiện tại</label>
+                            <input type="password" class="form-control" id="oldPassword" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-muted small fw-bold">Mật khẩu mới</label>
+                            <input type="password" class="form-control" id="newPassword" required minlength="6">
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label text-muted small fw-bold">Xác nhận mật khẩu mới</label>
+                            <input type="password" class="form-control" id="confirmNewPassword" required minlength="6">
+                        </div>
+                        <button type="submit" class="btn btn-warning w-100 fw-bold">Xác nhận đổi mật khẩu</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Scripts -->
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script>
-        const socket = io();
-        let token = localStorage.getItem('token');
-        let revenueChartInstance = null;
-        let statusChartInstance = null;
+    <script src="/js/ui-helpers.js"></script>
+    <script src="/js/admin.js"></script>
 
-        const formatVND = (num) => {
-            try { return Number(num).toLocaleString('vi-VN', { style: 'currency', currency: 'VND' }); }
-            catch (e) { return num + ' VND'; }
-        };
-
-        const showNotification = (msg, isError = false) => {
-            Toastify({
-                text: msg,
-                duration: 3000,
-                gravity: "top",
-                position: "right",
-                backgroundColor: isError ? "#dc3545" : "#28a745",
-            }).showToast();
-        };
-
-        // Check authentication and role
-        if (!token) {
-            window.location.href = '/';
-        }
-
-        // Check if user has Admin role
-        async function checkAdminRole() {
-            try {
-                const response = await fetch('/api/auth/me', {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (response.ok) {
-                    const userData = await response.json();
-                    const roles = userData.roles || [];
-                    if (!roles.includes('Admin')) {
-                        showNotification('Bạn không có quyền truy cập trang này', true);
-                        setTimeout(() => window.location.href = '/', 2000);
-                        return false;
-                    }
-                    return true;
-                } else {
-                    logout();
-                    return false;
-                }
-            } catch (e) {
-                console.error('Role check error:', e);
-                logout();
-                return false;
-            }
-        }
-
-        function showSection(sectionName) {
-            // Hide all sections
-            document.querySelectorAll('.section').forEach(section => {
-                section.classList.add('d-none');
-            });
-            // Show selected section
-            document.getElementById(sectionName + '-section').classList.remove('d-none');
-            // Update active nav link
-            document.querySelectorAll('.sidebar .nav-link').forEach(link => {
-                link.classList.remove('active');
-            });
-            event.target.classList.add('active');
-        }
-
-        // Load dashboard data
-        async function loadDashboardData() {
-            try {
-                const response = await fetch('/api/admin/stats', {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    
-                    // 1. Update Cards
-                    document.getElementById('totalUsers').textContent = data.counts.totalUsers;
-                    document.getElementById('totalProducts').textContent = data.counts.totalProducts;
-                    document.getElementById('activeAuctions').textContent = data.counts.activeAuctions;
-                    document.getElementById('totalRevenue').textContent = formatVND(data.counts.totalRevenue);
-
-                    // 2. Update Recent Activity
-                    const activityDiv = document.getElementById('recentActivity');
-                    activityDiv.innerHTML = data.activity.map(act => `
-                        <div class="d-flex justify-content-between border-bottom py-2">
-                            <div>
-                                <span class="badge bg-${act.Type === 'New User' ? 'info' : 'success'} me-2">${act.Type}</span>
-                                ${act.Description}
-                            </div>
-                            <small class="text-muted">${new Date(act.CreatedAt).toLocaleDateString('vi-VN')}</small>
-                        </div>
-                    `).join('');
-
-                    // 3. Update Recent Ended
-                    const endedDiv = document.getElementById('recentEndedAuctions');
-                    endedDiv.innerHTML = data.recentEnded.map(auc => `
-                        <div class="d-flex justify-content-between border-bottom py-2">
-                            <div><strong>${auc.Title}</strong></div>
-                            <div class="text-end">
-                                <div class="text-success fw-bold">${formatVND(auc.CurrentBid)}</div>
-                                <small>Thắng: ${auc.Winner || 'Không có'}</small>
-                            </div>
-                        </div>
-                    `).join('');
-
-                    // 4. Render Charts
-                    renderCharts(data.revenueChart, data.statusChart);
-                }
-            } catch (e) {
-                console.error('Load dashboard data error', e);
-            }
-        }
-
-        function renderCharts(revenueData, statusData) {
-            // Revenue Chart
-            const ctxRev = document.getElementById('revenueChart').getContext('2d');
-            if (revenueChartInstance) revenueChartInstance.destroy();
-            
-            revenueChartInstance = new Chart(ctxRev, {
-                type: 'line',
-                data: {
-                    labels: revenueData.map(d => d.Month),
-                    datasets: [{
-                        label: 'Doanh thu (VND)',
-                        data: revenueData.map(d => d.Revenue),
-                        borderColor: '#667eea',
-                        backgroundColor: 'rgba(102, 126, 234, 0.2)',
-                        fill: true,
-                        tension: 0.4
-                    }]
-                },
-                options: { responsive: true }
-            });
-
-            // Status Chart
-            const ctxStat = document.getElementById('auctionStatusChart').getContext('2d');
-            if (statusChartInstance) statusChartInstance.destroy();
-
-            statusChartInstance = new Chart(ctxStat, {
-                type: 'doughnut',
-                data: {
-                    labels: statusData.map(d => d.Status),
-                    datasets: [{
-                        data: statusData.map(d => d.Count),
-                        backgroundColor: ['#28a745', '#dc3545', '#ffc107'],
-                    }]
-                },
-                options: { responsive: true }
-            });
-        }
-
-        // Load users
-        async function loadUsers() {
-            try {
-                const response = await fetch('/api/admin/users', {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (response.ok) {
-                    const users = await response.json();
-                    const tbody = document.getElementById('usersTableBody');
-                    tbody.innerHTML = '';
-                    users.forEach(user => {
-                        const row = document.createElement('tr');
-                        row.innerHTML = `
-                            <td>${user.id}</td>
-                            <td>${user.name}</td>
-                            <td>${user.email}</td>
-                            <td><span class="badge bg-${user.role.includes('Admin') ? 'danger' : user.role.includes('Seller') ? 'warning' : 'primary'}">${user.role}</span></td>
-                            <td><span class="badge bg-success">Active</span></td>
-                            <td>
-                                <button class="btn btn-outline-primary btn-sm" onclick="openEditUserModal(${user.id}, '${user.name}', '${user.email}', '${user.role}')">Sửa</button>
-                                <button class="btn btn-outline-danger btn-sm" onclick="deleteUser(${user.id})">Xóa</button>
-                            </td>
-                        `;
-                        tbody.appendChild(row);
-                    });
-                }
-            } catch (e) {
-                console.error('Load users error', e);
-            }
-        }
-
-        // Load products
-        async function loadProducts() {
-            try {
-                const response = await fetch('/api/admin/products', {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (response.ok) {
-                    const products = await response.json();
-                    const tbody = document.getElementById('productsTableBody');
-                    tbody.innerHTML = '';
-                    products.forEach(product => {
-                        const row = document.createElement('tr');
-                        row.innerHTML = `
-                            <td>${product.Id}</td>
-                            <td>${product.Name}</td>
-                            <td>${formatVND(product.Price)}</td>
-                            <td>${product.Stock}</td>
-                            <td>${product.SellerName || 'Unknown'}</td>
-                            <td>
-                                <button class="btn btn-outline-info btn-sm" onclick="viewProductDetails(${product.Id})">Xem</button>
-                                <button class="btn btn-outline-danger btn-sm" onclick="deleteProduct(${product.Id})">Xóa</button>
-                            </td>
-                        `;
-                        tbody.appendChild(row);
-                    });
-                }
-            } catch (e) {
-                console.error('Load products error', e);
-            }
-        }
-
-        // Load auctions
-        async function loadAuctions() {
-            try {
-                const response = await fetch('/api/admin/auctions', {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (response.ok) {
-                    const auctions = await response.json();
-                    const tbody = document.getElementById('auctionsTableBody');
-                    tbody.innerHTML = '';
-                    auctions.forEach(auction => {
-                        const row = document.createElement('tr');
-                        row.innerHTML = `
-                            <td>${auction.id}</td>
-                            <td>${auction.productName}</td>
-                            <td>${formatVND(auction.currentBid)}</td>
-                            <td>${new Date(auction.endTime).toLocaleString('vi-VN')}</td>
-                            <td><span class="badge bg-${auction.status === 'active' ? 'success' : auction.status === 'ended' ? 'secondary' : 'warning'}">${auction.status}</span></td>
-                            <td>
-                                <button class="btn btn-outline-info btn-sm" onclick="viewAuctionDetails(${auction.id})">Xem</button>
-                                <button class="btn btn-outline-danger btn-sm" onclick="endAuction(${auction.id})">Kết thúc</button>
-                            </td>
-                        `;
-                        tbody.appendChild(row);
-                    });
-                }
-            } catch (e) {
-                console.error('Load auctions error', e);
-            }
-        }
-
-        // --- USER ACTIONS ---
-        function openEditUserModal(id, name, email, role) {
-            document.getElementById('editUserId').value = id;
-            document.getElementById('editUserName').value = name;
-            document.getElementById('editUserEmail').value = email;
-            // Simple logic: pick first role if multiple
-            const mainRole = role.includes('Admin') ? 'Admin' : role.includes('Seller') ? 'Seller' : 'User';
-            document.getElementById('editUserRole').value = mainRole;
-            new bootstrap.Modal(document.getElementById('editUserModal')).show();
-        }
-
-        document.getElementById('editUserForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const id = document.getElementById('editUserId').value;
-            const role = document.getElementById('editUserRole').value;
-            
-            try {
-                const res = await fetch(`/api/admin/users/${id}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                    body: JSON.stringify({ role })
-                });
-                if(res.ok) {
-                    showNotification('Cập nhật thành công');
-                    bootstrap.Modal.getInstance(document.getElementById('editUserModal')).hide();
-                    loadUsers();
-                } else showNotification('Lỗi cập nhật', true);
-            } catch(e) { showNotification('Lỗi server', true); }
-        });
-
-        async function deleteUser(id) {
-            if (!confirm('Bạn có chắc muốn xóa người dùng này?')) return;
-            try {
-                const response = await fetch(`/api/admin/users/${id}`, {
-                    method: 'DELETE',
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (response.ok) {
-                    showNotification('Xóa người dùng thành công');
-                    loadUsers();
-                } else {
-                    showNotification('Xóa người dùng thất bại', true);
-                }
-            } catch (e) {
-                showNotification('Lỗi xóa người dùng', true);
-            }
-        }
-
-        async function viewProductDetails(id) {
-            try {
-                const res = await fetch(`/api/admin/products/${id}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (res.ok) {
-                    const product = await res.json();
-                    document.getElementById('detailProductName').textContent = product.Name;
-                    document.getElementById('detailProductDesc').textContent = product.Description || 'Không có mô tả';
-                    document.getElementById('detailProductPrice').textContent = formatVND(product.Price);
-                    document.getElementById('detailProductStock').textContent = product.Stock;
-                    document.getElementById('detailProductSeller').textContent = product.SellerName || 'Unknown';
-
-                    const carouselInner = document.getElementById('productCarouselInner');
-                    carouselInner.innerHTML = '';
-                    if (product.images && product.images.length > 0) {
-                        product.images.forEach((url, index) => {
-                            carouselInner.innerHTML += `<div class="carousel-item ${index === 0 ? 'active' : ''}"><img src="${url}" class="d-block w-100 rounded" style="height: 300px; object-fit: cover;"></div>`;
-                        });
-                    } else {
-                        carouselInner.innerHTML = `<div class="carousel-item active"><img src="https://via.placeholder.com/400x300?text=No+Image" class="d-block w-100 rounded"></div>`;
-                    }
-                    new bootstrap.Modal(document.getElementById('viewProductModal')).show();
-                }
-            } catch (e) { console.error(e); }
-        }
-
-        async function deleteProduct(id) {
-            if (!confirm('Bạn có chắc muốn xóa sản phẩm này?')) return;
-            try {
-                const response = await fetch(`/api/products/${id}`, {
-                    method: 'DELETE',
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (response.ok) {
-                    showNotification('Xóa sản phẩm thành công');
-                    loadProducts();
-                } else {
-                    showNotification('Xóa sản phẩm thất bại', true);
-                }
-            } catch (e) {
-                showNotification('Lỗi xóa sản phẩm', true);
-            }
-        }
-
-        // --- AUCTION ACTIONS ---
-        async function viewAuctionDetails(id) {
-            try {
-                console.log(`Requesting auction details for ID: ${id}`);
-                const res = await fetch(`/api/admin/auctions/${id}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if(res.ok) {
-                    const data = await res.json();
-                    document.getElementById('viewAuctionProduct').textContent = data.info.ProductName;
-                    document.getElementById('viewAuctionSeller').textContent = data.info.SellerName;
-                    document.getElementById('viewAuctionStart').textContent = formatVND(data.info.StartingBid);
-                    document.getElementById('viewAuctionCurrent').textContent = formatVND(data.info.CurrentBid);
-                    document.getElementById('viewAuctionWinner').textContent = data.info.WinnerName || 'Chưa có';
-                    document.getElementById('viewAuctionEnd').textContent = new Date(data.info.EndTime).toLocaleString('vi-VN');
-                    
-                    const tbody = document.getElementById('viewAuctionBids');
-                    tbody.innerHTML = data.bids.map(b => `
-                        <tr><td>${b.Name}</td><td>${formatVND(b.BidAmount)}</td><td>${new Date(b.BidTime).toLocaleString('vi-VN')}</td></tr>
-                    `).join('');
-                    
-                    new bootstrap.Modal(document.getElementById('viewAuctionModal')).show();
-                } else {
-                    console.error(`Failed to load auction ${id}: ${res.status}`);
-                    showNotification(`Lỗi tải chi tiết đấu giá: ${res.status}`, true);
-                }
-            } catch(e) { console.error(e); showNotification('Lỗi kết nối server', true); }
-        }
-
-        async function endAuction(id) {
-            if (!confirm('Bạn có chắc muốn kết thúc đấu giá này?')) return;
-            try {
-                const response = await fetch(`/api/admin/auctions/${id}/end`, {
-                    method: 'POST',
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (response.ok) {
-                    showNotification('Kết thúc đấu giá thành công');
-                    loadAuctions();
-                } else {
-                    showNotification('Kết thúc đấu giá thất bại', true);
-                }
-            } catch (e) {
-                showNotification('Lỗi kết thúc đấu giá', true);
-            }
-        }
-
-        function logout() {
-            localStorage.removeItem('token');
-            window.location.href = '/';
-        }
-
-        // Initialize
-        checkAdminRole().then(valid => {
-            if (valid) {
-                loadDashboardData();
-                loadUsers();
-                loadProducts();
-                loadAuctions();
-            }
-        });
-    </script>
 </body>
 </html>

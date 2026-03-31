@@ -1,0 +1,104 @@
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f8f9fa;
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+/* Sidebar Styles */
+.sidebar {
+    background: white;
+    width: 260px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    z-index: 1000;
+    box-shadow: 2px 0 10px rgba(0,0,0,0.05);
+    padding-top: 20px;
+    transition: all 0.3s;
+}
+.sidebar-header {
+    padding: 0 25px 20px 25px;
+    border-bottom: 1px solid #eee;
+}
+.sidebar-menu {
+    padding: 20px 15px;
+}
+.nav-link {
+    color: #555;
+    padding: 12px 20px;
+    border-radius: 10px;
+    margin-bottom: 5px;
+    transition: all 0.2s;
+    font-weight: 500;
+}
+.nav-link:hover, .nav-link.active {
+    background-color: #f0f2f5;
+    color: #667eea;
+}
+.nav-link i {
+    width: 25px;
+}
+.card {
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+}
+.main-content {
+    margin-left: 260px;
+    padding: 30px;
+}
+/* Stats Cards */
+.stats-card {
+    color: white;
+    border-radius: 15px;
+    overflow: hidden;
+    position: relative;
+}
+.bg-gradient-primary { background: linear-gradient(45deg, #667eea, #764ba2); }
+.bg-gradient-success { background: linear-gradient(45deg, #43e97b, #38f9d7); }
+.bg-gradient-warning { background: linear-gradient(45deg, #f6d365, #fda085); }
+
+.btn-primary {
+    background: #667eea;
+    border: none;
+}
+.avatar-upload {
+    position: relative;
+    max-width: 150px;
+    margin: 0 auto;
+}
+.auction-card {
+    overflow: hidden;
+    margin-bottom: 20px;
+}
+.auction-card img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+}
+.countdown {
+    font-weight: bold;
+    color: #dc3545;
+}
+.fade-in {
+    animation: fadeInUp 0.8s ease-out;
+}
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.modal-content {
+    border-radius: 15px;
+    border: none;
+}
+/* Responsive */
+@media (max-width: 768px) {
+    .sidebar { transform: translateX(-100%); }
+    .main-content { margin-left: 0; }
+}
