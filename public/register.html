@@ -233,40 +233,47 @@
                 return;
             }
 
-            const formData = new FormData();
-            formData.append('name', document.getElementById('regName').value);
-            formData.append('email', document.getElementById('regEmail').value);
-            formData.append('password', document.getElementById('regPassword').value);
-            formData.append('role', selectedRole);
-
             const avatarFile = document.getElementById('regAvatar').files[0];
-            if (avatarFile) {
-                formData.append('avatar', avatarFile);
-            }
 
-            try {
-                const response = await fetch('/api/auth/register', {
-                    method: 'POST',
-                    // Không set Content-Type để browser tự động set multipart/form-data
-                    body: formData
-                });
+            const submitRegistration = async (avatarBase64 = null) => {
+                try {
+                    const response = await fetch('/api/auth/register', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            name: document.getElementById('regName').value,
+                            email: document.getElementById('regEmail').value,
+                            password: document.getElementById('regPassword').value,
+                            role: selectedRole,
+                            avatar: avatarBase64
+                        })
+                    });
 
-                console.log('Register response status:', response.status);
+                    console.log('Register response status:', response.status);
+                    const data = await response.json();
+                    console.log('Register response data:', data);
 
-                const data = await response.json();
-                console.log('Register response data:', data);
-
-                if (response.ok) {
-                    showNotification('Đăng ký thành công! Đang chuyển hướng...');
-                    setTimeout(() => {
-                        window.location.href = '/';
-                    }, 2000);
-                } else {
-                    showNotification(data.message || 'Đăng ký thất bại', true);
+                    if (response.ok) {
+                        showNotification('Đăng ký thành công! Đang chuyển hướng...');
+                        setTimeout(() => {
+                            window.location.href = '/';
+                        }, 2000);
+                    } else {
+                        showNotification(data.message || 'Đăng ký thất bại', true);
+                    }
+                } catch (e) {
+                    console.error('Register fetch error:', e);
+                    showNotification('Lỗi đăng ký, vui lòng thử lại', true);
                 }
-            } catch (e) {
-                console.error('Register fetch error:', e);
-                showNotification('Lỗi đăng ký, vui lòng thử lại', true);
+            };
+
+            // Nếu có ảnh, chuyển sang Base64 rồi mới gửi JSON
+            if (avatarFile) {
+                const reader = new FileReader();
+                reader.onloadend = () => submitRegistration(reader.result);
+                reader.readAsDataURL(avatarFile);
+            } else {
+                submitRegistration(null);
             }
         });
     </script>
